@@ -18,6 +18,7 @@
       <nav class="nav">
         <a href="index.html#accueil">Accueil</a>
         <a href="index.html#contact">Contact</a>
+        <a href="membres-admin.html" id="members-admin-link" hidden>Membres</a>
         <a href="login.html">Espace membre</a>
       </nav>
       <button class="cta-top nav-button" id="logout-button" type="button" hidden>Se deconnecter</button>
@@ -68,6 +69,7 @@
     const planningAdminFeedback = document.getElementById('planning-admin-feedback');
     const planningDate = document.getElementById('planning-date');
     const logoutButton = document.getElementById('logout-button');
+    const membersAdminLink = document.getElementById('members-admin-link');
     let currentMember = null;
 
     async function requestJson(url, options = {}) {
@@ -92,6 +94,22 @@
 
     function formatFrenchDate(date) {
       return new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    }
+
+    function renderAttendees(attendees = []) {
+      if (!attendees.length) {
+        return '<p class="planning-attendance-empty">Aucun membre present pour le moment.</p>';
+      }
+
+      return `
+        <div class="planning-attendees" aria-label="Membres presents">
+          ${attendees.map((attendee) => `
+            <span class="planning-attendee" title="${escapeHtml(attendee.displayName)}">
+              <img src="${escapeHtml(attendee.imagePath || 'assets/logo2.png')}" alt="${escapeHtml(attendee.displayName)}">
+            </span>
+          `).join('')}
+        </div>
+      `;
     }
 
     function openDatePicker() {
@@ -121,6 +139,15 @@
           <div class="planning-event-body">
             <h2>${escapeHtml(event.title)}</h2>
             <p>${escapeHtml(event.location)}</p>
+            ${renderAttendees(event.attendees)}
+            <div class="planning-attendance-actions" role="group" aria-label="Presence">
+              <button class="btn small planning-presence-yes ${event.currentUserIsPresent ? 'is-selected' : ''} planning-attendance" type="button" data-id="${escapeHtml(event.id)}" data-present="true">
+                Present
+              </button>
+              <button class="btn small planning-presence-no ${event.currentUserIsPresent ? '' : 'is-selected'} planning-attendance" type="button" data-id="${escapeHtml(event.id)}" data-present="false">
+                Absent
+              </button>
+            </div>
           </div>
           ${currentMember?.canManagePlanning ? `
             <button class="btn ghost small danger planning-delete" type="button" data-id="${escapeHtml(event.id)}">
@@ -135,6 +162,7 @@
       const data = await requestJson('/.netlify/functions/planning');
       currentMember = data.member;
       planningAdminForm.hidden = !currentMember.canManagePlanning;
+      membersAdminLink.hidden = !currentMember.canManagePlanning;
       logoutButton.hidden = false;
       planningGreeting.textContent = data.message;
       renderPlanning(data.events);
@@ -167,6 +195,30 @@
     });
 
     planningEvents.addEventListener('click', async (event) => {
+      const attendanceButton = event.target.closest('.planning-attendance');
+      if (attendanceButton) {
+        attendanceButton.disabled = true;
+        planningAdminFeedback.textContent = 'Mise a jour de votre presence...';
+
+        try {
+          const data = await requestJson('/.netlify/functions/update-attendance', {
+            method: 'POST',
+            body: JSON.stringify({
+              eventId: attendanceButton.dataset.id,
+              isPresent: attendanceButton.dataset.present === 'true'
+            })
+          });
+          planningAdminFeedback.textContent = attendanceButton.dataset.present === 'true'
+            ? 'Votre presence est confirmee.'
+            : 'Votre absence est enregistree.';
+          renderPlanning(data.events);
+        } catch (error) {
+          attendanceButton.disabled = false;
+          planningAdminFeedback.textContent = error.message;
+        }
+        return;
+      }
+
       const button = event.target.closest('.planning-delete');
       if (!button) return;
 

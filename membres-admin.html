@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Membres — ALFRED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="standalone-member">
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Alfred, accueil">
+        <img src="assets/logo2.png" alt="ALFRED" />
+      </a>
+      <nav class="nav">
+        <a href="planning.html">Planning</a>
+        <a href="login.html">Espace membre</a>
+      </nav>
+      <button class="cta-top nav-button" id="logout-button" type="button" hidden>Se deconnecter</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="section member-page">
+      <div class="container planning-card">
+        <h1 class="section-title">Membres</h1>
+        <p class="planning-status" id="members-status" role="status" aria-live="polite">Chargement des membres...</p>
+        <div class="members-admin-grid" id="members-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <template id="member-card-template">
+    <article class="member-admin-card">
+      <img class="member-admin-image" alt="">
+      <div class="member-admin-content">
+        <h2></h2>
+        <p></p>
+        <label>
+          Image
+          <select class="member-image-select"></select>
+        </label>
+        <label>
+          Chemin personnalise
+          <input class="member-image-input" type="text" placeholder="assets/niwa_proxy.png">
+        </label>
+        <button class="btn primary small member-save" type="button">Enregistrer</button>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    const status = document.getElementById('members-status');
+    const membersList = document.getElementById('members-list');
+    const template = document.getElementById('member-card-template');
+    const logoutButton = document.getElementById('logout-button');
+    let images = [];
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Une erreur est survenue.');
+      return data;
+    }
+
+    function setImagePreview(img, imagePath) {
+      img.src = imagePath || 'assets/logo2.png';
+      img.alt = imagePath ? 'Photo du membre' : 'Logo Alfred';
+    }
+
+    function renderMembers(members = []) {
+      if (!members.length) {
+        status.textContent = 'Aucun membre trouve.';
+        membersList.innerHTML = '';
+        return;
+      }
+
+      status.textContent = `${members.length} membres`;
+      membersList.innerHTML = '';
+
+      members.forEach((member) => {
+        const node = template.content.firstElementChild.cloneNode(true);
+        const img = node.querySelector('.member-admin-image');
+        const title = node.querySelector('h2');
+        const role = node.querySelector('p');
+        const select = node.querySelector('.member-image-select');
+        const input = node.querySelector('.member-image-input');
+        const button = node.querySelector('.member-save');
+
+        title.textContent = member.displayName;
+        role.textContent = member.role === 'admin' ? 'Administrateur' : 'Membre';
+        input.value = member.imagePath || '';
+        setImagePreview(img, member.imagePath);
+
+        select.innerHTML = [
+          '<option value="">Aucune image</option>',
+          ...images.map((imagePath) => `<option value="${imagePath}">${imagePath}</option>`)
+        ].join('');
+        select.value = images.includes(member.imagePath) ? member.imagePath : '';
+
+        select.addEventListener('change', () => {
+          input.value = select.value;
+          setImagePreview(img, input.value);
+        });
+
+        input.addEventListener('input', () => {
+          setImagePreview(img, input.value);
+          select.value = images.includes(input.value) ? input.value : '';
+        });
+
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          status.textContent = `Mise a jour de ${member.displayName}...`;
+
+          try {
+            const data = await requestJson('/.netlify/functions/update-member-image', {
+              method: 'POST',
+              body: JSON.stringify({
+                username: member.username,
+                imagePath: input.value
+              })
+            });
+            renderMembers(data.members);
+          } catch (error) {
+            status.textContent = error.message;
+            button.disabled = false;
+          }
+        });
+
+        membersList.appendChild(node);
+      });
+    }
+
+    async function loadMembers() {
+      const data = await requestJson('/.netlify/functions/members');
+      images = data.images || [];
+      logoutButton.hidden = false;
+      renderMembers(data.members || []);
+    }
+
+    logoutButton.addEventListener('click', async () => {
+      await requestJson('/.netlify/functions/logout', { method: 'POST' }).catch(() => {});
+      window.location.href = 'login.html';
+    });
+
+    loadMembers().catch((error) => {
+      status.textContent = error.message;
+      if (error.message === 'Connexion requise.') {
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
+</body>
+</html>

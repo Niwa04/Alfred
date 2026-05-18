@@ -21,7 +21,7 @@ exports.handler = async (event) => {
     return jsonResponse(200, {
       message: `Bonjour ${member.displayName}`,
       member: serializeMember(member),
-      events: await getPlanningEvents()
+      events: await getPlanningEvents(member.username)
     });
   } catch (error) {
     return jsonResponse(503, { error: 'La base de données Netlify n’est pas disponible.' });

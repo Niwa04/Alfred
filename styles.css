@@ -596,6 +596,57 @@ body:not(.standalone-member) #planning{
   margin: 0;
   color: rgba(233,238,247,.75);
 }
+.planning-attendees{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.planning-attendee{
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(215,180,106,.70);
+  background: rgba(0,0,0,.25);
+  overflow:hidden;
+  display:inline-flex;
+}
+.planning-attendee img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.planning-attendance-empty{
+  margin-top: 10px !important;
+  font-size: 13px;
+  color: rgba(233,238,247,.60) !important;
+}
+.planning-attendance-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.planning-presence-yes{
+  border-color: rgba(83,220,154,.82);
+  background: rgba(83,220,154,.18);
+  color: #d9ffe9;
+}
+.planning-presence-yes.is-selected{
+  background: linear-gradient(180deg, rgba(83,220,154,.48), rgba(83,220,154,.20));
+  box-shadow: 0 0 0 3px rgba(83,220,154,.16), 0 16px 44px rgba(0,0,0,.45);
+}
+.planning-presence-no{
+  border-color: rgba(255,255,255,.18);
+  background: rgba(0,0,0,.18);
+  color: rgba(233,238,247,.70);
+  box-shadow:none;
+}
+.planning-presence-no.is-selected{
+  border-color: rgba(215,180,106,.55);
+  background: rgba(215,180,106,.10);
+  color: rgba(242,212,138,.88);
+}
 .btn.danger{
   border-color: rgba(255,140,140,.55);
   color: #ffd0d0;
@@ -604,9 +655,75 @@ body:not(.standalone-member) #planning{
   cursor:not-allowed;
   opacity:.55;
 }
+.members-admin-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+  text-align:left;
+}
+.member-admin-card{
+  display:grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 16px;
+  align-items:start;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: var(--radius);
+  background: rgba(0,0,0,.18);
+}
+.member-admin-image{
+  width: 118px;
+  height: 118px;
+  object-fit: cover;
+  border-radius: 999px;
+  border: 2px solid rgba(215,180,106,.58);
+  background: rgba(0,0,0,.22);
+}
+.member-admin-content{
+  display:grid;
+  gap: 10px;
+}
+.member-admin-content h2{
+  margin:0;
+  font-family: Cinzel, serif;
+  color: var(--gold2);
+  font-size: 20px;
+  letter-spacing:.05em;
+}
+.member-admin-content p{
+  margin:0;
+  color: rgba(233,238,247,.75);
+}
+.member-admin-content label{
+  display:grid;
+  gap: 7px;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(233,238,247,.78);
+}
+.member-admin-content select,
+.member-admin-content input{
+  width:100%;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 12px;
+  background: rgba(0,0,0,.22);
+  color: var(--text);
+  padding: 11px 12px;
+  font: inherit;
+  outline: none;
+}
 @media (max-width: 520px){
+  .members-admin-grid,
   .planning-admin-grid{
     grid-template-columns: 1fr;
+  }
+  .member-admin-card{
+    grid-template-columns: 1fr;
+  }
+  .member-admin-image{
+    margin-inline:auto;
   }
   .planning-event{
     align-items:flex-start;

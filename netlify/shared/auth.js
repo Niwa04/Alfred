@@ -10,8 +10,9 @@ function normalizeMember(member) {
   const username = member.username;
   const displayName = member.displayName || member.display_name || username;
   const role = member.role === 'admin' ? 'admin' : 'member';
+  const imagePath = member.imagePath || member.image_path || '';
 
-  return { username, displayName, role };
+  return { username, displayName, role, imagePath };
 }
 
 function isAdmin(member) {
@@ -25,6 +26,7 @@ function serializeMember(member) {
     username: normalizedMember.username,
     displayName: normalizedMember.displayName,
     role: normalizedMember.role,
+    imagePath: normalizedMember.imagePath,
     canManagePlanning: isAdmin(normalizedMember)
   };
 }
