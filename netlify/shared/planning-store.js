@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 const { getDatabaseClient } = require('./database');
 
 function normalizeDate(value) {
@@ -45,12 +48,19 @@ function sortEvents(events) {
 }
 
 async function getPlanningEvents() {
-  const db = await getDatabaseClient();
-  const events = await db.sql`
-    SELECT id, event_date, event_time, title, location
-    FROM planning_events
-    ORDER BY event_date ASC, event_time ASC, id ASC
-  `;
+  let events;
+
+  try {
+    const db = await getDatabaseClient();
+    events = await db.sql`
+      SELECT id, event_date, event_time, title, location
+      FROM planning_events
+      ORDER BY event_date ASC, event_time ASC, id ASC
+    `;
+  } catch (error) {
+    const planningPath = path.join(__dirname, '..', 'data', 'planning.json');
+    events = JSON.parse(fs.readFileSync(planningPath, 'utf8'));
+  }
 
   return events.map(normalizeEvent);
 }
@@ -61,7 +71,14 @@ async function addPlanningEvent(event, createdBy) {
     return validation;
   }
 
-  const db = await getDatabaseClient();
+  let db;
+
+  try {
+    db = await getDatabaseClient();
+  } catch (error) {
+    return { error: 'La base de données Netlify est nécessaire pour ajouter une date.' };
+  }
+
   const rows = await db.sql`
     INSERT INTO planning_events (event_date, event_time, title, location, created_by)
     VALUES (${validation.event.date}::date, ${validation.event.time}::time, ${validation.event.title}, ${validation.event.location}, ${createdBy})

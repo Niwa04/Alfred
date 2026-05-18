@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const { getDatabaseClient } = require('./database');
 
@@ -37,18 +39,43 @@ function getExtraMembers() {
     .map((username) => normalizeMember({ username, displayName: username, role: 'member' }));
 }
 
+function getFileMembers() {
+  try {
+    const membersPath = path.join(__dirname, '..', 'data', 'members.json');
+    const members = JSON.parse(fs.readFileSync(membersPath, 'utf8'));
+    return Array.isArray(members) ? members.map(normalizeMember) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function findLocalMember(username) {
+  const normalizedUsername = username.trim().toLowerCase();
+  return [...getFileMembers(), ...getExtraMembers()].find(
+    (member) => member.username.toLowerCase() === normalizedUsername
+  );
+}
+
 async function findMember(username = '') {
   const normalizedUsername = username.trim();
   if (!normalizedUsername) return null;
 
-  const db = await getDatabaseClient();
-  const rows = await db.sql`
-    SELECT username, display_name, role
-    FROM members
-    WHERE lower(username) = lower(${normalizedUsername})
-    LIMIT 1
-  `;
-  const member = rows[0] || getExtraMembers().find((extraMember) => extraMember.username.toLowerCase() === normalizedUsername.toLowerCase());
+  let member;
+
+  try {
+    const db = await getDatabaseClient();
+    const rows = await db.sql`
+      SELECT username, display_name, role
+      FROM members
+      WHERE lower(username) = lower(${normalizedUsername})
+      LIMIT 1
+    `;
+    member = rows[0];
+  } catch (error) {
+    member = findLocalMember(normalizedUsername);
+  }
+
+  member = member || findLocalMember(normalizedUsername);
 
   return member ? normalizeMember(member) : null;
 }
