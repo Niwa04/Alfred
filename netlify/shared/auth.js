@@ -81,11 +81,11 @@ async function findMember(username = '') {
 }
 
 function getMemberPassword() {
-  return process.env.MEMBER_PASSWORD || DEFAULT_MEMBER_PASSWORD;
+  return (process.env.MEMBER_PASSWORD || DEFAULT_MEMBER_PASSWORD).trim();
 }
 
 function getSessionSecret() {
-  return process.env.SESSION_SECRET || process.env.MEMBER_PASSWORD || DEFAULT_MEMBER_PASSWORD;
+  return (process.env.SESSION_SECRET || process.env.MEMBER_PASSWORD || DEFAULT_MEMBER_PASSWORD).trim();
 }
 
 function timingSafeEqual(left, right) {
