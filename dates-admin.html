@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dates du spectacle — ALFRED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="standalone-member">
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Alfred, accueil">
+        <img src="assets/logo2.png" alt="ALFRED" />
+      </a>
+      <nav class="nav">
+        <a href="planning.html">Planning</a>
+        <a href="membres-admin.html">Membres</a>
+        <a href="login.html">Espace membre</a>
+      </nav>
+      <button class="cta-top nav-button" id="logout-button" type="button" hidden>Se deconnecter</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="section member-page">
+      <div class="container planning-card">
+        <h1 class="section-title">Dates du spectacle</h1>
+        <p class="planning-status" id="dates-status" role="status" aria-live="polite">Chargement des dates...</p>
+
+        <form class="planning-admin-form" id="show-date-form">
+          <h2>Ajouter une date publique</h2>
+          <div class="planning-admin-grid">
+            <label>
+              Date
+              <input name="date" type="date" required>
+            </label>
+            <label>
+              Heure
+              <input name="time" type="time" required>
+            </label>
+            <label>
+              Titre
+              <input name="title" type="text" placeholder="ALFRED - Representation" required>
+            </label>
+            <label>
+              Lieu
+              <input name="venue" type="text" placeholder="Theatre, ville, salle" required>
+            </label>
+            <label class="wide-field">
+              Lien reservation
+              <input name="reservationUrl" type="url" placeholder="https://...">
+            </label>
+          </div>
+          <button class="btn primary" type="submit">Ajouter la date</button>
+        </form>
+
+        <div class="dates admin-show-dates" id="admin-show-dates"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const status = document.getElementById('dates-status');
+    const datesList = document.getElementById('admin-show-dates');
+    const form = document.getElementById('show-date-form');
+    const logoutButton = document.getElementById('logout-button');
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Une erreur est survenue.');
+      return data;
+    }
+
+    function escapeHtml(value = '') {
+      const element = document.createElement('span');
+      element.textContent = value;
+      return element.innerHTML;
+    }
+
+    function formatDate(date) {
+      const value = new Date(`${date}T12:00:00`);
+      return {
+        day: value.toLocaleDateString('fr-FR', { day: '2-digit' }),
+        month: value.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')
+      };
+    }
+
+    function renderDates(dates = []) {
+      status.textContent = dates.length ? `${dates.length} date(s)` : 'Aucune date pour le moment.';
+
+      datesList.innerHTML = dates.map((date) => {
+        const formattedDate = formatDate(date.date);
+        return `
+          <div class="date-row">
+            <div class="date-badge">
+              <div class="date-day">${formattedDate.day}</div>
+              <div class="date-month">${escapeHtml(formattedDate.month)}</div>
+            </div>
+            <div class="date-info">
+              <div class="date-title">${escapeHtml(date.title)}</div>
+              <div class="date-meta">${escapeHtml(date.time)} - ${escapeHtml(date.venue)}</div>
+              ${date.reservationUrl ? `<a class="admin-date-link" href="${escapeHtml(date.reservationUrl)}" target="_blank" rel="noopener">${escapeHtml(date.reservationUrl)}</a>` : ''}
+            </div>
+            <button class="btn ghost small danger delete-show-date" type="button" data-id="${escapeHtml(date.id)}">Supprimer</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadDates() {
+      const session = await requestJson('/.netlify/functions/session');
+      if (!session.member?.canManagePlanning) {
+        throw new Error('Acces reserve aux administrateurs.');
+      }
+
+      const data = await requestJson('/.netlify/functions/show-dates');
+      logoutButton.hidden = false;
+      renderDates(data.dates || []);
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      status.textContent = 'Ajout de la date...';
+      const formData = new FormData(form);
+
+      try {
+        const data = await requestJson('/.netlify/functions/add-show-date', {
+          method: 'POST',
+          body: JSON.stringify({
+            date: String(formData.get('date') || ''),
+            time: String(formData.get('time') || ''),
+            title: String(formData.get('title') || ''),
+            venue: String(formData.get('venue') || ''),
+            reservationUrl: String(formData.get('reservationUrl') || '')
+          })
+        });
+        form.reset();
+        renderDates(data.dates || []);
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
+    datesList.addEventListener('click', async (event) => {
+      const button = event.target.closest('.delete-show-date');
+      if (!button) return;
+
+      button.disabled = true;
+      status.textContent = 'Suppression de la date...';
+
+      try {
+        const data = await requestJson('/.netlify/functions/delete-show-date', {
+          method: 'POST',
+          body: JSON.stringify({ id: button.dataset.id })
+        });
+        renderDates(data.dates || []);
+      } catch (error) {
+        button.disabled = false;
+        status.textContent = error.message;
+      }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+      await requestJson('/.netlify/functions/logout', { method: 'POST' }).catch(() => {});
+      window.location.href = 'login.html';
+    });
+
+    loadDates().catch((error) => {
+      status.textContent = error.message;
+      if (error.message === 'Connexion requise.') {
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
+</body>
+</html>

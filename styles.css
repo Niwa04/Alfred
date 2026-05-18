@@ -516,6 +516,9 @@ body:not(.standalone-member) #planning{
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
+.wide-field{
+  grid-column: 1 / -1;
+}
 .planning-admin-form label{
   display:grid;
   gap: 8px;
@@ -654,6 +657,20 @@ body:not(.standalone-member) #planning{
 .btn[disabled]{
   cursor:not-allowed;
   opacity:.55;
+}
+.disabled-link{
+  pointer-events:none;
+  opacity:.62;
+}
+.admin-date-link{
+  display:block;
+  margin-top: 6px;
+  color: var(--gold2);
+  font-size: 13px;
+  overflow-wrap:anywhere;
+}
+.admin-show-dates{
+  margin-top:24px;
 }
 .members-admin-grid{
   display:grid;

@@ -17,6 +17,7 @@
       </a>
       <nav class="nav">
         <a href="membres-admin.html" id="members-admin-link" hidden>Membres</a>
+        <a href="dates-admin.html" id="dates-admin-link" hidden>Dates</a>
         <a href="login.html">Espace membre</a>
       </nav>
       <button class="cta-top nav-button" id="logout-button" type="button" hidden>Se deconnecter</button>
@@ -68,6 +69,7 @@
     const planningDate = document.getElementById('planning-date');
     const logoutButton = document.getElementById('logout-button');
     const membersAdminLink = document.getElementById('members-admin-link');
+    const datesAdminLink = document.getElementById('dates-admin-link');
     let currentMember = null;
 
     async function requestJson(url, options = {}) {
@@ -165,6 +167,7 @@
       currentMember = data.member;
       planningAdminForm.hidden = !currentMember.canManagePlanning;
       membersAdminLink.hidden = !currentMember.canManagePlanning;
+      datesAdminLink.hidden = !currentMember.canManagePlanning;
       logoutButton.hidden = false;
       planningGreeting.textContent = data.message;
       renderPlanning(data.events);

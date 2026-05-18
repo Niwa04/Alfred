@@ -222,7 +222,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
           Ajoutez ici vos dates, ville, théâtre et lien de réservation.
         </p>
 
-        <div class="dates">
+        <div class="dates" id="show-dates">
           <div class="date-row">
             <div class="date-badge">
               <div class="date-day">12</div>
@@ -297,6 +297,55 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    const showDates = document.getElementById('show-dates');
+
+    function escapeHtml(value = '') {
+      const element = document.createElement('span');
+      element.textContent = value;
+      return element.innerHTML;
+    }
+
+    function formatShowDate(date) {
+      const value = new Date(`${date}T12:00:00`);
+      return {
+        day: value.toLocaleDateString('fr-FR', { day: '2-digit' }),
+        month: value.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')
+      };
+    }
+
+    function renderShowDates(dates = []) {
+      if (!dates.length) {
+        showDates.innerHTML = '<p class="section-subtitle">Aucune date n est annoncee pour le moment.</p>';
+        return;
+      }
+
+      showDates.innerHTML = dates.map((date) => {
+        const formattedDate = formatShowDate(date.date);
+        const reservationLink = date.reservationUrl
+          ? `<a class="btn primary small" href="${escapeHtml(date.reservationUrl)}" target="_blank" rel="noopener">Reserver</a>`
+          : '<span class="btn ghost small disabled-link">Bientot</span>';
+
+        return `
+          <div class="date-row">
+            <div class="date-badge">
+              <div class="date-day">${formattedDate.day}</div>
+              <div class="date-month">${escapeHtml(formattedDate.month)}</div>
+            </div>
+            <div class="date-info">
+              <div class="date-title">${escapeHtml(date.title)}</div>
+              <div class="date-meta">${escapeHtml(date.time)} - ${escapeHtml(date.venue)}</div>
+            </div>
+            ${reservationLink}
+          </div>
+        `;
+      }).join('');
+    }
+
+    fetch('/.netlify/functions/show-dates')
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Dates indisponibles')))
+      .then((data) => renderShowDates(data.dates || []))
+      .catch(() => renderShowDates([]));
   </script>
 </body>
 </html>
