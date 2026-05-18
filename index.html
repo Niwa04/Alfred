@@ -35,10 +35,11 @@
         <a href="#a-propos">À propos</a>
         <a href="#artistes">Artistes</a>
         <a href="#dates">Dates</a>
+        <a href="#planning" class="member-only" hidden>Planning</a>
         <a href="#contact">Contact</a>
       </nav>
 
-      <a class="cta-top" href="#dates">Réserver</a>
+      <a class="cta-top" href="#espace-membre" id="member-cta">Espace membre</a>
     </div>
   </header>
 
@@ -263,6 +264,48 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
       </div>
     </section>
 
+    <!-- ESPACE MEMBRE -->
+    <section class="section section-dark" id="espace-membre">
+      <div class="container member-area">
+        <h2 class="section-title gold">Espace membre</h2>
+        <p class="section-subtitle">
+          Connectez-vous avec votre identifiant pour accéder à la page Planning. Le mot de passe est vérifié côté Netlify.
+        </p>
+
+        <div class="member-card" id="login-card">
+          <form class="login-form" id="login-form">
+            <label for="member-username">Identifiant</label>
+            <input id="member-username" name="username" type="text" autocomplete="username" placeholder="Niwa ou Noah" required>
+
+            <label for="member-password">Mot de passe</label>
+            <input id="member-password" name="password" type="password" autocomplete="current-password" placeholder="Mot de passe" required>
+
+            <p class="login-feedback" id="login-feedback" role="status" aria-live="polite"></p>
+
+            <button class="btn primary" type="submit">Se connecter</button>
+          </form>
+        </div>
+
+        <div class="member-card member-session" id="member-session" hidden>
+          <p class="member-welcome">Vous êtes connecté en tant que <strong id="member-name"></strong>.</p>
+          <div class="member-actions">
+            <a class="btn primary" href="#planning">Voir le planning</a>
+            <button class="btn ghost" id="logout-button" type="button">Se déconnecter</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLANNING -->
+    <section class="section" id="planning" hidden>
+      <div class="container planning-card">
+        <h2 class="section-title">Planning</h2>
+        <p class="planning-greeting" id="planning-greeting">Bonjour</p>
+        <p class="planning-status" id="planning-status" role="status" aria-live="polite"></p>
+        <div class="planning-events" id="planning-events"></div>
+      </div>
+    </section>
+
     <!-- CONTACT -->
     <section class="section section-dark" id="contact">
       <div class="container">
@@ -298,6 +341,150 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    const loginForm = document.getElementById('login-form');
+    const loginCard = document.getElementById('login-card');
+    const memberSession = document.getElementById('member-session');
+    const memberName = document.getElementById('member-name');
+    const memberCta = document.getElementById('member-cta');
+    const logoutButton = document.getElementById('logout-button');
+    const feedback = document.getElementById('login-feedback');
+    const planningSection = document.getElementById('planning');
+    const planningGreeting = document.getElementById('planning-greeting');
+    const planningStatus = document.getElementById('planning-status');
+    const planningEvents = document.getElementById('planning-events');
+    const planningLinks = document.querySelectorAll('.member-only');
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Une erreur est survenue.');
+      }
+
+      return data;
+    }
+
+    function updateMemberUi(member) {
+      const isLoggedIn = Boolean(member);
+      loginCard.hidden = isLoggedIn;
+      memberSession.hidden = !isLoggedIn;
+      planningSection.hidden = !isLoggedIn;
+      memberCta.textContent = isLoggedIn ? 'Planning' : 'Espace membre';
+      memberCta.setAttribute('href', isLoggedIn ? '#planning' : '#espace-membre');
+
+      planningLinks.forEach((link) => {
+        link.hidden = !isLoggedIn;
+      });
+
+      if (isLoggedIn) {
+        memberName.textContent = member.displayName;
+        planningGreeting.textContent = `Bonjour ${member.displayName}`;
+      } else {
+        memberName.textContent = '';
+        planningGreeting.textContent = 'Bonjour';
+        planningStatus.textContent = '';
+        planningEvents.innerHTML = '';
+      }
+    }
+
+    function escapeHtml(value = '') {
+      const element = document.createElement('span');
+      element.textContent = value;
+      return element.innerHTML;
+    }
+
+    function formatFrenchDate(date) {
+      return new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    }
+
+    function renderPlanning(events = []) {
+      if (!events.length) {
+        planningStatus.textContent = 'Aucun événement n’est prévu pour le moment.';
+        planningEvents.innerHTML = '';
+        return;
+      }
+
+      planningStatus.textContent = 'Voici les prochains rendez-vous :';
+      planningEvents.innerHTML = events.map((event) => `
+        <article class="planning-event">
+          <div class="planning-event-date">
+            <span>${formatFrenchDate(event.date)}</span>
+            <strong>${escapeHtml(event.time)}</strong>
+          </div>
+          <div>
+            <h3>${escapeHtml(event.title)}</h3>
+            <p>${escapeHtml(event.location)}</p>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    async function loadPlanning() {
+      planningStatus.textContent = 'Chargement du planning…';
+      planningEvents.innerHTML = '';
+
+      try {
+        const data = await requestJson('/.netlify/functions/planning');
+        planningGreeting.textContent = data.message;
+        renderPlanning(data.events);
+      } catch (error) {
+        planningStatus.textContent = error.message;
+      }
+    }
+
+    async function restoreSession() {
+      try {
+        const data = await requestJson('/.netlify/functions/session');
+        updateMemberUi(data.member);
+        await loadPlanning();
+      } catch (error) {
+        updateMemberUi(null);
+      }
+    }
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      feedback.textContent = 'Connexion en cours…';
+
+      const formData = new FormData(loginForm);
+      const username = String(formData.get('username') || '');
+      const password = String(formData.get('password') || '');
+
+      try {
+        const data = await requestJson('/.netlify/functions/login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password })
+        });
+
+        feedback.textContent = '';
+        loginForm.reset();
+        updateMemberUi(data.member);
+        await loadPlanning();
+        window.location.hash = 'planning';
+      } catch (error) {
+        feedback.textContent = error.message;
+      }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+      try {
+        await requestJson('/.netlify/functions/logout', { method: 'POST' });
+      } finally {
+        updateMemberUi(null);
+        window.location.hash = 'espace-membre';
+      }
+    });
+
+    restoreSession();
   </script>
 </body>
 </html>
