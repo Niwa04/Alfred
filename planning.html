@@ -91,7 +91,11 @@
     }
 
     function formatFrenchDate(date) {
-      return new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+      return new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'short'
+      });
     }
 
     function renderAttendees(attendees = []) {
