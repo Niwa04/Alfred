@@ -1,5 +1,10 @@
 const { findMember, jsonResponse, serializeMember, verifyPassword } = require('../shared/auth');
-const { getDatabaseClient, normalizeDatabaseRows } = require('../shared/database');
+const {
+  getConfiguredConnectionString,
+  getConfiguredConnectionStringKey,
+  getDatabaseClient,
+  normalizeDatabaseRows
+} = require('../shared/database');
 
 exports.handler = async () => {
   const username = 'Niwa';
@@ -32,6 +37,9 @@ exports.handler = async () => {
     memberPasswordEnvIsSet: Boolean(process.env.MEMBER_PASSWORD),
     memberPasswordEnvLength: runtimePassword.length,
     memberPasswordEnvTrimmedLength: runtimePassword.trim().length,
+    databaseConnectionEnvKey: getConfiguredConnectionStringKey(),
+    databaseConnectionEnvIsSet: Boolean(getConfiguredConnectionString()),
+    databaseConnectionEnvLength: getConfiguredConnectionString().length,
     testedUsername: username,
     testedPasswordLength: password.length,
     passwordIsValid: verifyPassword(password),
