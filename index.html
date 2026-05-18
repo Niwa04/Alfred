@@ -269,7 +269,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
       <div class="container member-area">
         <h2 class="section-title gold">Espace membre</h2>
         <p class="section-subtitle">
-          Connectez-vous avec votre identifiant pour accéder à la page Planning.
+          Connectez-vous avec votre identifiant pour accéder à la page Planning. Le mot de passe est vérifié côté Netlify.
         </p>
 
         <div class="member-card" id="login-card">
@@ -301,6 +301,8 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
       <div class="container planning-card">
         <h2 class="section-title">Planning</h2>
         <p class="planning-greeting" id="planning-greeting">Bonjour</p>
+        <p class="planning-status" id="planning-status" role="status" aria-live="polite"></p>
+        <div class="planning-events" id="planning-events"></div>
       </div>
     </section>
 
@@ -341,8 +343,6 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    const memberConfig = window.ALFRED_MEMBER_CONFIG || { sharedPassword: '', users: [] };
-    const storageKey = 'alfred-member';
     const loginForm = document.getElementById('login-form');
     const loginCard = document.getElementById('login-card');
     const memberSession = document.getElementById('member-session');
@@ -352,25 +352,30 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
     const feedback = document.getElementById('login-feedback');
     const planningSection = document.getElementById('planning');
     const planningGreeting = document.getElementById('planning-greeting');
+    const planningStatus = document.getElementById('planning-status');
+    const planningEvents = document.getElementById('planning-events');
     const planningLinks = document.querySelectorAll('.member-only');
 
-    function findMember(username) {
-      const normalizedUsername = username.trim().toLowerCase();
-      return memberConfig.users.find((user) => user.username.toLowerCase() === normalizedUsername);
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Une erreur est survenue.');
+      }
+
+      return data;
     }
 
-    function setMemberSession(username) {
-      localStorage.setItem(storageKey, username);
-      updateMemberUi(username);
-    }
-
-    function clearMemberSession() {
-      localStorage.removeItem(storageKey);
-      updateMemberUi(null);
-    }
-
-    function updateMemberUi(username) {
-      const isLoggedIn = Boolean(username);
+    function updateMemberUi(member) {
+      const isLoggedIn = Boolean(member);
       loginCard.hidden = isLoggedIn;
       memberSession.hidden = !isLoggedIn;
       planningSection.hidden = !isLoggedIn;
@@ -382,38 +387,105 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
       });
 
       if (isLoggedIn) {
-        memberName.textContent = username;
-        planningGreeting.textContent = `Bonjour ${username}`;
+        memberName.textContent = member.displayName;
+        planningGreeting.textContent = `Bonjour ${member.displayName}`;
       } else {
         memberName.textContent = '';
         planningGreeting.textContent = 'Bonjour';
+        planningStatus.textContent = '';
+        planningEvents.innerHTML = '';
       }
     }
 
-    loginForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const formData = new FormData(loginForm);
-      const member = findMember(String(formData.get('username') || ''));
-      const password = String(formData.get('password') || '');
+    function escapeHtml(value = '') {
+      const element = document.createElement('span');
+      element.textContent = value;
+      return element.innerHTML;
+    }
 
-      if (!member || password !== memberConfig.sharedPassword) {
-        feedback.textContent = 'Identifiant ou mot de passe incorrect.';
+    function formatFrenchDate(date) {
+      return new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    }
+
+    function renderPlanning(events = []) {
+      if (!events.length) {
+        planningStatus.textContent = 'Aucun événement n’est prévu pour le moment.';
+        planningEvents.innerHTML = '';
         return;
       }
 
-      feedback.textContent = '';
-      loginForm.reset();
-      setMemberSession(member.username);
-      window.location.hash = 'planning';
+      planningStatus.textContent = 'Voici les prochains rendez-vous :';
+      planningEvents.innerHTML = events.map((event) => `
+        <article class="planning-event">
+          <div class="planning-event-date">
+            <span>${formatFrenchDate(event.date)}</span>
+            <strong>${escapeHtml(event.time)}</strong>
+          </div>
+          <div>
+            <h3>${escapeHtml(event.title)}</h3>
+            <p>${escapeHtml(event.location)}</p>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    async function loadPlanning() {
+      planningStatus.textContent = 'Chargement du planning…';
+      planningEvents.innerHTML = '';
+
+      try {
+        const data = await requestJson('/.netlify/functions/planning');
+        planningGreeting.textContent = data.message;
+        renderPlanning(data.events);
+      } catch (error) {
+        planningStatus.textContent = error.message;
+      }
+    }
+
+    async function restoreSession() {
+      try {
+        const data = await requestJson('/.netlify/functions/session');
+        updateMemberUi(data.member);
+        await loadPlanning();
+      } catch (error) {
+        updateMemberUi(null);
+      }
+    }
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      feedback.textContent = 'Connexion en cours…';
+
+      const formData = new FormData(loginForm);
+      const username = String(formData.get('username') || '');
+      const password = String(formData.get('password') || '');
+
+      try {
+        const data = await requestJson('/.netlify/functions/login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password })
+        });
+
+        feedback.textContent = '';
+        loginForm.reset();
+        updateMemberUi(data.member);
+        await loadPlanning();
+        window.location.hash = 'planning';
+      } catch (error) {
+        feedback.textContent = error.message;
+      }
     });
 
-    logoutButton.addEventListener('click', () => {
-      clearMemberSession();
-      window.location.hash = 'espace-membre';
+    logoutButton.addEventListener('click', async () => {
+      try {
+        await requestJson('/.netlify/functions/logout', { method: 'POST' });
+      } finally {
+        updateMemberUi(null);
+        window.location.hash = 'espace-membre';
+      }
     });
 
-    const savedMember = findMember(localStorage.getItem(storageKey) || '');
-    updateMemberUi(savedMember ? savedMember.username : null);
+    restoreSession();
   </script>
 </body>
 </html>
