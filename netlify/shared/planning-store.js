@@ -90,8 +90,33 @@ async function addPlanningEvent(event, createdBy) {
   };
 }
 
+async function deletePlanningEvent(id) {
+  const eventId = Number(id);
+  if (!Number.isInteger(eventId) || eventId <= 0) {
+    return { error: 'Date introuvable.' };
+  }
+
+  const db = await getDatabaseClient();
+  const result = await db.sql`
+    DELETE FROM planning_events
+    WHERE id = ${eventId}
+    RETURNING id
+  `;
+  const rows = normalizeDatabaseRows(result);
+
+  if (!rows[0]) {
+    return { error: 'Date introuvable.' };
+  }
+
+  return {
+    deletedId: String(eventId),
+    events: await getPlanningEvents()
+  };
+}
+
 module.exports = {
   addPlanningEvent,
+  deletePlanningEvent,
   getPlanningEvents,
   validateEvent
 };

@@ -35,11 +35,11 @@
         <a href="#a-propos">À propos</a>
         <a href="#artistes">Artistes</a>
         <a href="#dates">Dates</a>
-        <a href="#planning" class="member-only" hidden>Planning</a>
+        <a href="planning.html">Planning</a>
         <a href="#contact">Contact</a>
       </nav>
 
-      <a class="cta-top" href="#espace-membre" id="member-cta">Espace membre</a>
+      <a class="cta-top" href="login.html" id="member-cta">Espace membre</a>
     </div>
   </header>
 
@@ -289,7 +289,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         <div class="member-card member-session" id="member-session" hidden>
           <p class="member-welcome">Vous êtes connecté en tant que <strong id="member-name"></strong>.</p>
           <div class="member-actions">
-            <a class="btn primary" href="#planning">Voir le planning</a>
+            <a class="btn primary" href="planning.html">Voir le planning</a>
             <button class="btn ghost" id="logout-button" type="button">Se déconnecter</button>
           </div>
         </div>
@@ -408,7 +408,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
       planningSection.hidden = !isLoggedIn;
       planningAdminForm.hidden = !member?.canManagePlanning;
       memberCta.textContent = isLoggedIn ? 'Planning' : 'Espace membre';
-      memberCta.setAttribute('href', isLoggedIn ? '#planning' : '#espace-membre');
+      memberCta.setAttribute('href', isLoggedIn ? 'planning.html' : 'login.html');
 
       planningLinks.forEach((link) => {
         link.hidden = !isLoggedIn;
@@ -501,7 +501,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         loginForm.reset();
         updateMemberUi(data.member);
         await loadPlanning();
-        window.location.hash = 'planning';
+        window.location.href = 'planning.html';
       } catch (error) {
         feedback.textContent = error.message;
       }
@@ -538,7 +538,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         await requestJson('/.netlify/functions/logout', { method: 'POST' });
       } finally {
         updateMemberUi(null);
-        window.location.hash = 'espace-membre';
+        window.location.href = 'login.html';
       }
     });
 

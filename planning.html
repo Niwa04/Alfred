@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planning — ALFRED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="standalone-member">
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Alfred, accueil">
+        <img src="assets/logo2.png" alt="ALFRED" />
+      </a>
+      <nav class="nav">
+        <a href="index.html#accueil">Accueil</a>
+        <a href="index.html#contact">Contact</a>
+        <a href="login.html">Espace membre</a>
+      </nav>
+      <button class="cta-top nav-button" id="logout-button" type="button" hidden>Se deconnecter</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="section member-page">
+      <div class="container planning-card">
+        <h1 class="section-title">Planning</h1>
+        <p class="planning-greeting" id="planning-greeting">Bonjour</p>
+        <p class="planning-status" id="planning-status" role="status" aria-live="polite">Chargement du planning...</p>
+
+        <form class="planning-admin-form" id="planning-admin-form" hidden>
+          <h2>Ajouter une date au planning</h2>
+          <div class="planning-admin-grid">
+            <label>
+              Date
+              <input id="planning-date" name="date" type="date" required>
+            </label>
+            <label>
+              Heure
+              <input id="planning-time" name="time" type="time" required>
+            </label>
+            <label>
+              Titre
+              <input id="planning-title" name="title" type="text" placeholder="Repetition, rendez-vous..." required>
+            </label>
+            <label>
+              Lieu
+              <input id="planning-location" name="location" type="text" placeholder="Salle, theatre..." required>
+            </label>
+          </div>
+          <p class="planning-admin-feedback" id="planning-admin-feedback" role="status" aria-live="polite"></p>
+          <button class="btn primary" type="submit">Ajouter la date</button>
+        </form>
+
+        <div class="planning-events" id="planning-events"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const planningGreeting = document.getElementById('planning-greeting');
+    const planningStatus = document.getElementById('planning-status');
+    const planningEvents = document.getElementById('planning-events');
+    const planningAdminForm = document.getElementById('planning-admin-form');
+    const planningAdminFeedback = document.getElementById('planning-admin-feedback');
+    const planningDate = document.getElementById('planning-date');
+    const logoutButton = document.getElementById('logout-button');
+    let currentMember = null;
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Une erreur est survenue.');
+      return data;
+    }
+
+    function escapeHtml(value = '') {
+      const element = document.createElement('span');
+      element.textContent = value;
+      return element.innerHTML;
+    }
+
+    function formatFrenchDate(date) {
+      return new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    }
+
+    function openDatePicker() {
+      if (typeof planningDate.showPicker === 'function') {
+        try {
+          planningDate.showPicker();
+        } catch (error) {
+          // Some browsers only allow showPicker during a direct click.
+        }
+      }
+    }
+
+    function renderPlanning(events = []) {
+      if (!events.length) {
+        planningStatus.textContent = 'Aucun evenement n est prevu pour le moment.';
+        planningEvents.innerHTML = '';
+        return;
+      }
+
+      planningStatus.textContent = 'Voici les prochains rendez-vous :';
+      planningEvents.innerHTML = events.map((event) => `
+        <article class="planning-event">
+          <div class="planning-event-date">
+            <span>${formatFrenchDate(event.date)}</span>
+            <strong>${escapeHtml(event.time)}</strong>
+          </div>
+          <div class="planning-event-body">
+            <h2>${escapeHtml(event.title)}</h2>
+            <p>${escapeHtml(event.location)}</p>
+          </div>
+          ${currentMember?.canManagePlanning ? `
+            <button class="btn ghost small danger planning-delete" type="button" data-id="${escapeHtml(event.id)}">
+              Supprimer
+            </button>
+          ` : ''}
+        </article>
+      `).join('');
+    }
+
+    async function loadPlanning() {
+      const data = await requestJson('/.netlify/functions/planning');
+      currentMember = data.member;
+      planningAdminForm.hidden = !currentMember.canManagePlanning;
+      logoutButton.hidden = false;
+      planningGreeting.textContent = data.message;
+      renderPlanning(data.events);
+    }
+
+    planningDate.addEventListener('focus', openDatePicker);
+    planningDate.addEventListener('click', openDatePicker);
+
+    planningAdminForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      planningAdminFeedback.textContent = 'Ajout de la date en cours...';
+
+      const formData = new FormData(planningAdminForm);
+      try {
+        const data = await requestJson('/.netlify/functions/add-planning', {
+          method: 'POST',
+          body: JSON.stringify({
+            date: String(formData.get('date') || ''),
+            time: String(formData.get('time') || ''),
+            title: String(formData.get('title') || ''),
+            location: String(formData.get('location') || '')
+          })
+        });
+        planningAdminForm.reset();
+        planningAdminFeedback.textContent = 'La date a bien ete ajoutee.';
+        renderPlanning(data.events);
+      } catch (error) {
+        planningAdminFeedback.textContent = error.message;
+      }
+    });
+
+    planningEvents.addEventListener('click', async (event) => {
+      const button = event.target.closest('.planning-delete');
+      if (!button) return;
+
+      button.disabled = true;
+      planningAdminFeedback.textContent = 'Suppression de la date en cours...';
+
+      try {
+        const data = await requestJson('/.netlify/functions/delete-planning', {
+          method: 'POST',
+          body: JSON.stringify({ id: button.dataset.id })
+        });
+        planningAdminFeedback.textContent = 'La date a bien ete supprimee.';
+        renderPlanning(data.events);
+      } catch (error) {
+        button.disabled = false;
+        planningAdminFeedback.textContent = error.message;
+      }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+      await requestJson('/.netlify/functions/logout', { method: 'POST' }).catch(() => {});
+      window.location.href = 'login.html';
+    });
+
+    loadPlanning().catch((error) => {
+      planningStatus.textContent = error.message;
+      if (error.message === 'Connexion requise.') {
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connexion — ALFRED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="standalone-member">
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Alfred, accueil">
+        <img src="assets/logo2.png" alt="ALFRED" />
+      </a>
+      <nav class="nav">
+        <a href="index.html#accueil">Accueil</a>
+        <a href="index.html#artistes">Artistes</a>
+        <a href="planning.html">Planning</a>
+      </nav>
+      <a class="cta-top" href="planning.html">Planning</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="section section-dark member-page">
+      <div class="container member-area">
+        <h1 class="section-title gold">Espace membre</h1>
+        <p class="section-subtitle">Connectez-vous pour acceder au planning de l'equipe.</p>
+
+        <div class="member-card" id="login-card">
+          <form class="login-form" id="login-form">
+            <label for="member-username">Identifiant</label>
+            <input id="member-username" name="username" type="text" autocomplete="username" placeholder="Niwa, Noah, Marie..." required>
+
+            <label for="member-password">Mot de passe</label>
+            <input id="member-password" name="password" type="password" autocomplete="current-password" placeholder="Mot de passe" required>
+
+            <p class="login-feedback" id="login-feedback" role="status" aria-live="polite"></p>
+            <button class="btn primary" type="submit">Se connecter</button>
+          </form>
+        </div>
+
+        <div class="member-card member-session" id="member-session" hidden>
+          <p class="member-welcome">Vous etes connecte en tant que <strong id="member-name"></strong>.</p>
+          <div class="member-actions">
+            <a class="btn primary" href="planning.html">Voir le planning</a>
+            <button class="btn ghost" id="logout-button" type="button">Se deconnecter</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const loginForm = document.getElementById('login-form');
+    const loginCard = document.getElementById('login-card');
+    const memberSession = document.getElementById('member-session');
+    const memberName = document.getElementById('member-name');
+    const logoutButton = document.getElementById('logout-button');
+    const feedback = document.getElementById('login-feedback');
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Une erreur est survenue.');
+      return data;
+    }
+
+    function updateSession(member) {
+      const isLoggedIn = Boolean(member);
+      loginCard.hidden = isLoggedIn;
+      memberSession.hidden = !isLoggedIn;
+      memberName.textContent = member?.displayName || '';
+    }
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      feedback.textContent = 'Connexion en cours...';
+
+      const formData = new FormData(loginForm);
+      try {
+        await requestJson('/.netlify/functions/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            username: String(formData.get('username') || ''),
+            password: String(formData.get('password') || '')
+          })
+        });
+        window.location.href = 'planning.html';
+      } catch (error) {
+        feedback.textContent = error.message;
+      }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+      await requestJson('/.netlify/functions/logout', { method: 'POST' }).catch(() => {});
+      updateSession(null);
+    });
+
+    requestJson('/.netlify/functions/session')
+      .then((data) => updateSession(data.member))
+      .catch(() => updateSession(null));
+  </script>
+</body>
+</html>
