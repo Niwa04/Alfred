@@ -1,4 +1,4 @@
-const { getSessionMember, jsonResponse } = require('../shared/auth');
+const { getSessionMember, jsonResponse, serializeMember } = require('../shared/auth');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
@@ -12,6 +12,6 @@ exports.handler = async (event) => {
 
   return jsonResponse(200, {
     authenticated: true,
-    member: { username: member.username, displayName: member.displayName }
+    member: serializeMember(member)
   });
 };

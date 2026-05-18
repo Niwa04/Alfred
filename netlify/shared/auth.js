@@ -10,14 +10,41 @@ function getAllowedMembers() {
     .split(',')
     .map((username) => username.trim())
     .filter(Boolean)
-    .map((username) => ({ username, displayName: username }));
+    .map((username) => ({ username, displayName: username, role: 'member' }));
 
   return [...MEMBERS, ...extraMembers];
 }
 
+function normalizeMember(member) {
+  const role = member.role === 'admin' ? 'admin' : 'member';
+
+  return {
+    username: member.username,
+    displayName: member.displayName || member.username,
+    role
+  };
+}
+
 function findMember(username = '') {
   const normalizedUsername = username.trim().toLowerCase();
-  return getAllowedMembers().find((member) => member.username.toLowerCase() === normalizedUsername);
+  const member = getAllowedMembers().find((allowedMember) => allowedMember.username.toLowerCase() === normalizedUsername);
+
+  return member ? normalizeMember(member) : null;
+}
+
+function isAdmin(member) {
+  return member?.role === 'admin';
+}
+
+function serializeMember(member) {
+  const normalizedMember = normalizeMember(member);
+
+  return {
+    username: normalizedMember.username,
+    displayName: normalizedMember.displayName,
+    role: normalizedMember.role,
+    canManagePlanning: isAdmin(normalizedMember)
+  };
 }
 
 function getMemberPassword() {
@@ -131,6 +158,8 @@ module.exports = {
   createSessionCookie,
   findMember,
   getSessionMember,
+  isAdmin,
+  serializeMember,
   jsonResponse,
   verifyPassword
 };

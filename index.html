@@ -275,7 +275,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         <div class="member-card" id="login-card">
           <form class="login-form" id="login-form">
             <label for="member-username">Identifiant</label>
-            <input id="member-username" name="username" type="text" autocomplete="username" placeholder="Niwa ou Noah" required>
+            <input id="member-username" name="username" type="text" autocomplete="username" placeholder="Niwa, Noah, Marie…" required>
 
             <label for="member-password">Mot de passe</label>
             <input id="member-password" name="password" type="password" autocomplete="current-password" placeholder="Mot de passe" required>
@@ -302,6 +302,31 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         <h2 class="section-title">Planning</h2>
         <p class="planning-greeting" id="planning-greeting">Bonjour</p>
         <p class="planning-status" id="planning-status" role="status" aria-live="polite"></p>
+
+        <form class="planning-admin-form" id="planning-admin-form" hidden>
+          <h3>Ajouter une date au planning</h3>
+          <div class="planning-admin-grid">
+            <label>
+              Date
+              <input id="planning-date" name="date" type="date" required>
+            </label>
+            <label>
+              Heure
+              <input id="planning-time" name="time" type="time" required>
+            </label>
+            <label>
+              Titre
+              <input id="planning-title" name="title" type="text" placeholder="Répétition, rendez-vous…" required>
+            </label>
+            <label>
+              Lieu
+              <input id="planning-location" name="location" type="text" placeholder="Salle, théâtre…" required>
+            </label>
+          </div>
+          <p class="planning-admin-feedback" id="planning-admin-feedback" role="status" aria-live="polite"></p>
+          <button class="btn primary" type="submit">Ajouter la date</button>
+        </form>
+
         <div class="planning-events" id="planning-events"></div>
       </div>
     </section>
@@ -354,6 +379,8 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
     const planningGreeting = document.getElementById('planning-greeting');
     const planningStatus = document.getElementById('planning-status');
     const planningEvents = document.getElementById('planning-events');
+    const planningAdminForm = document.getElementById('planning-admin-form');
+    const planningAdminFeedback = document.getElementById('planning-admin-feedback');
     const planningLinks = document.querySelectorAll('.member-only');
 
     async function requestJson(url, options = {}) {
@@ -379,6 +406,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
       loginCard.hidden = isLoggedIn;
       memberSession.hidden = !isLoggedIn;
       planningSection.hidden = !isLoggedIn;
+      planningAdminForm.hidden = !member?.canManagePlanning;
       memberCta.textContent = isLoggedIn ? 'Planning' : 'Espace membre';
       memberCta.setAttribute('href', isLoggedIn ? '#planning' : '#espace-membre');
 
@@ -394,6 +422,8 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         planningGreeting.textContent = 'Bonjour';
         planningStatus.textContent = '';
         planningEvents.innerHTML = '';
+        planningAdminFeedback.textContent = '';
+        planningAdminForm.reset();
       }
     }
 
@@ -435,6 +465,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
 
       try {
         const data = await requestJson('/.netlify/functions/planning');
+        updateMemberUi(data.member);
         planningGreeting.textContent = data.message;
         renderPlanning(data.events);
       } catch (error) {
@@ -473,6 +504,32 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         window.location.hash = 'planning';
       } catch (error) {
         feedback.textContent = error.message;
+      }
+    });
+
+    planningAdminForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      planningAdminFeedback.textContent = 'Ajout de la date en cours…';
+
+      const formData = new FormData(planningAdminForm);
+      const payload = {
+        date: String(formData.get('date') || ''),
+        time: String(formData.get('time') || ''),
+        title: String(formData.get('title') || ''),
+        location: String(formData.get('location') || '')
+      };
+
+      try {
+        const data = await requestJson('/.netlify/functions/add-planning', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        planningAdminForm.reset();
+        planningAdminFeedback.textContent = 'La date a bien été ajoutée.';
+        renderPlanning(data.events);
+      } catch (error) {
+        planningAdminFeedback.textContent = error.message;
       }
     });
 

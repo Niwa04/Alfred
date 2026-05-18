@@ -2,6 +2,7 @@ const {
   createSessionCookie,
   findMember,
   jsonResponse,
+  serializeMember,
   verifyPassword
 } = require('../shared/auth');
 
@@ -26,7 +27,7 @@ exports.handler = async (event) => {
 
   return jsonResponse(
     200,
-    { member: { username: member.username, displayName: member.displayName } },
+    { member: serializeMember(member) },
     { 'Set-Cookie': createSessionCookie(member) }
   );
 };
