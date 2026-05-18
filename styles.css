@@ -403,3 +403,177 @@ h4.section-title {
     margin-top: 100px;
     margin-bottom: 27px;
 }
+/* Espace membre */
+.member-area{
+  max-width: 780px;
+}
+.member-card,
+.planning-card{
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.login-form{
+  display:grid;
+  gap: 12px;
+}
+.login-form label{
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(233,238,247,.78);
+}
+.login-form input{
+  width:100%;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  background: rgba(0,0,0,.22);
+  color: var(--text);
+  padding: 13px 14px;
+  font: inherit;
+  outline: none;
+}
+.login-form input:focus{
+  border-color: rgba(215,180,106,.75);
+  box-shadow: 0 0 0 3px rgba(215,180,106,.14);
+}
+.login-feedback{
+  min-height: 20px;
+  margin: 0;
+  color: #ffb8b8;
+  font-weight: 600;
+}
+.member-session{
+  text-align:center;
+}
+.member-welcome{
+  margin: 0 0 18px;
+  color: rgba(233,238,247,.86);
+}
+.member-welcome strong,
+.planning-greeting{
+  color: var(--gold2);
+}
+.member-actions{
+  display:flex;
+  justify-content:center;
+  gap: 12px;
+  flex-wrap:wrap;
+}
+.planning-card{
+  text-align:center;
+}
+.planning-greeting{
+  margin: 20px 0 0;
+  font-family: Cinzel, serif;
+  font-size: clamp(30px, 5vw, 58px);
+  letter-spacing: .08em;
+}
+.planning-status{
+  margin: 12px 0 0;
+  color: rgba(233,238,247,.78);
+}
+.planning-events{
+  display:grid;
+  gap: 12px;
+  margin-top: 22px;
+  text-align:left;
+}
+.planning-event{
+  display:flex;
+  gap: 14px;
+  align-items:center;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: var(--radius);
+  background: rgba(0,0,0,.18);
+}
+.planning-event-date{
+  width: 88px;
+  min-width: 88px;
+  border: 1px solid rgba(215,180,106,.55);
+  border-radius: 16px;
+  padding: 10px 8px;
+  text-align:center;
+  color: var(--gold2);
+}
+.planning-event-date span,
+.planning-event-date strong{
+  display:block;
+}
+.planning-event-date span{
+  font-size: 12px;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+.planning-event-date strong{
+  margin-top: 4px;
+  font-family: Cinzel, serif;
+}
+.planning-event h3{
+  margin: 0 0 4px;
+  font-family: Cinzel, serif;
+  letter-spacing: .05em;
+}
+.planning-event p{
+  margin: 0;
+  color: rgba(233,238,247,.75);
+}
+@media (max-width: 520px){
+  .planning-event{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .planning-event-date{
+    width:100%;
+  }
+}
+.admin-planning{
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255,255,255,.10);
+  text-align:left;
+}
+.admin-planning h3{
+  margin: 0 0 16px;
+  font-family: Cinzel, serif;
+  color: var(--gold2);
+  letter-spacing: .06em;
+  text-align:center;
+}
+.planning-form{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.planning-form label{
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(233,238,247,.78);
+}
+.planning-form input{
+  width:100%;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  background: rgba(0,0,0,.22);
+  color: var(--text);
+  padding: 13px 14px;
+  font: inherit;
+  outline: none;
+}
+.planning-form input:focus{
+  border-color: rgba(215,180,106,.75);
+  box-shadow: 0 0 0 3px rgba(215,180,106,.14);
+}
+.planning-form .login-feedback,
+.planning-form .btn{
+  grid-column: 1 / -1;
+}
+@media (max-width: 520px){
+  .planning-form{
+    grid-template-columns: 1fr;
+  }
+}
