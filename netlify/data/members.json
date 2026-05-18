@@ -1,13 +1,4 @@
 [
-  { "username": "Niwa", "displayName": "Niwa", "role": "admin" },
-  { "username": "Noah", "displayName": "Noah", "role": "admin" },
-  { "username": "Marie", "displayName": "Marie", "role": "member" },
-  { "username": "TomEliott", "displayName": "Tom Eliott", "role": "member" },
-  { "username": "Stecy", "displayName": "Stecy", "role": "member" },
-  { "username": "Luce", "displayName": "Luce", "role": "member" },
-  { "username": "Ayline", "displayName": "Ayline", "role": "member" },
-  { "username": "Ambre", "displayName": "Ambre", "role": "member" },
-  { "username": "Ezio", "displayName": "Ezio", "role": "member" },
-  { "username": "Thomas", "displayName": "Thomas", "role": "member" },
-  { "username": "Majda", "displayName": "Majda", "role": "member" }
+  { "username": "Niwa", "displayName": "Niwa" },
+  { "username": "Noah", "displayName": "Noah" }
 ]

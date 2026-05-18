@@ -5,23 +5,14 @@ const DEFAULT_MEMBER_PASSWORD = 'Alfred2026';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
 const MEMBERS = require('../data/members.json');
 
-function normalizeMember(member) {
-  const role = member.role === 'admin' ? 'admin' : 'member';
-  return {
-    username: member.username,
-    displayName: member.displayName || member.username,
-    role
-  };
-}
-
 function getAllowedMembers() {
   const extraMembers = (process.env.MEMBER_USERS || '')
     .split(',')
     .map((username) => username.trim())
     .filter(Boolean)
-    .map((username) => ({ username, displayName: username, role: 'member' }));
+    .map((username) => ({ username, displayName: username }));
 
-  return [...MEMBERS, ...extraMembers].map(normalizeMember);
+  return [...MEMBERS, ...extraMembers];
 }
 
 function findMember(username = '') {
@@ -123,18 +114,6 @@ function getSessionMember(event) {
   }
 }
 
-function isAdmin(member) {
-  return member?.role === 'admin';
-}
-
-function serializeMember(member) {
-  return {
-    username: member.username,
-    displayName: member.displayName,
-    role: member.role
-  };
-}
-
 function jsonResponse(statusCode, body, headers = {}) {
   return {
     statusCode,
@@ -152,8 +131,6 @@ module.exports = {
   createSessionCookie,
   findMember,
   getSessionMember,
-  isAdmin,
   jsonResponse,
-  serializeMember,
   verifyPassword
 };

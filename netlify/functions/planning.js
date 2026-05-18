@@ -1,5 +1,6 @@
-const { getPlanningEvents } = require('../shared/planning-store');
-const { getSessionMember, jsonResponse, serializeMember } = require('../shared/auth');
+const { getSessionMember, jsonResponse } = require('../shared/auth');
+
+const PLANNING_EVENTS = require('../data/planning.json');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
@@ -11,11 +12,9 @@ exports.handler = async (event) => {
     return jsonResponse(401, { error: 'Connexion requise.' });
   }
 
-  const events = await getPlanningEvents();
-
   return jsonResponse(200, {
     message: `Bonjour ${member.displayName}`,
-    member: serializeMember(member),
-    events
+    member: { username: member.username, displayName: member.displayName },
+    events: PLANNING_EVENTS
   });
 };

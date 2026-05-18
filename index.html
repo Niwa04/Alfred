@@ -303,26 +303,6 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         <p class="planning-greeting" id="planning-greeting">Bonjour</p>
         <p class="planning-status" id="planning-status" role="status" aria-live="polite"></p>
         <div class="planning-events" id="planning-events"></div>
-
-        <div class="admin-planning" id="admin-planning" hidden>
-          <h3>Ajouter une date</h3>
-          <form class="planning-form" id="planning-form">
-            <label for="planning-date">Date</label>
-            <input id="planning-date" name="date" type="date" required>
-
-            <label for="planning-time">Heure</label>
-            <input id="planning-time" name="time" type="time" required>
-
-            <label for="planning-title">Titre</label>
-            <input id="planning-title" name="title" type="text" placeholder="Répétition, filage…" required>
-
-            <label for="planning-location">Lieu</label>
-            <input id="planning-location" name="location" type="text" placeholder="Salle, studio…" required>
-
-            <p class="login-feedback" id="planning-feedback" role="status" aria-live="polite"></p>
-            <button class="btn primary" type="submit">Ajouter au planning</button>
-          </form>
-        </div>
       </div>
     </section>
 
@@ -359,6 +339,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
     </section>
   </main>
 
+  <script src="members.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -373,9 +354,6 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
     const planningGreeting = document.getElementById('planning-greeting');
     const planningStatus = document.getElementById('planning-status');
     const planningEvents = document.getElementById('planning-events');
-    const adminPlanning = document.getElementById('admin-planning');
-    const planningForm = document.getElementById('planning-form');
-    const planningFeedback = document.getElementById('planning-feedback');
     const planningLinks = document.querySelectorAll('.member-only');
 
     async function requestJson(url, options = {}) {
@@ -401,7 +379,6 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
       loginCard.hidden = isLoggedIn;
       memberSession.hidden = !isLoggedIn;
       planningSection.hidden = !isLoggedIn;
-      adminPlanning.hidden = !isLoggedIn || member.role !== 'admin';
       memberCta.textContent = isLoggedIn ? 'Planning' : 'Espace membre';
       memberCta.setAttribute('href', isLoggedIn ? '#planning' : '#espace-membre');
 
@@ -410,15 +387,13 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
       });
 
       if (isLoggedIn) {
-        const roleLabel = member.role === 'admin' ? 'admin' : 'membre';
-        memberName.textContent = `${member.displayName} (${roleLabel})`;
+        memberName.textContent = member.displayName;
         planningGreeting.textContent = `Bonjour ${member.displayName}`;
       } else {
         memberName.textContent = '';
         planningGreeting.textContent = 'Bonjour';
         planningStatus.textContent = '';
         planningEvents.innerHTML = '';
-        planningFeedback.textContent = '';
       }
     }
 
@@ -498,32 +473,6 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         window.location.hash = 'planning';
       } catch (error) {
         feedback.textContent = error.message;
-      }
-    });
-
-    planningForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      planningFeedback.textContent = 'Ajout en cours…';
-
-      const formData = new FormData(planningForm);
-      const payload = {
-        date: String(formData.get('date') || ''),
-        time: String(formData.get('time') || ''),
-        title: String(formData.get('title') || ''),
-        location: String(formData.get('location') || '')
-      };
-
-      try {
-        const data = await requestJson('/.netlify/functions/add-planning', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-
-        planningFeedback.textContent = 'Date ajoutée au planning.';
-        planningForm.reset();
-        renderPlanning(data.events);
-      } catch (error) {
-        planningFeedback.textContent = error.message;
       }
     });
 

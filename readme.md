@@ -6,7 +6,7 @@ Site vitrine du spectacle musical **ALFRED**, avec un espace membre compatible N
 
 L’espace membre utilise des **Netlify Functions** pour éviter de mettre le mot de passe dans le code public du site.
 
-### Identifiants autorisés et rôles
+### Identifiants autorisés
 
 Les membres autorisés sont déclarés dans :
 
@@ -14,46 +14,17 @@ Les membres autorisés sont déclarés dans :
 netlify/data/members.json
 ```
 
-Rôles :
-
-- `admin` : peut consulter le planning et ajouter des dates.
-- `member` : peut consulter le planning uniquement.
-
-Admins par défaut :
+Par défaut :
 
 - `Niwa`
 - `Noah`
 
-Membres par défaut :
-
-- `Marie`
-- `TomEliott`
-- `Stecy`
-- `Luce`
-- `Ayline`
-- `Ambre`
-- `Ezio`
-- `Thomas`
-- `Majda`
-
-Tous les comptes utilisent le mot de passe par défaut :
-
-```text
-Alfred2026
-```
-
 ### Planning
 
-Les dates de base du planning sont déclarées dans :
+Le planning affiché dans l’espace membre est déclaré dans :
 
 ```text
 netlify/data/planning.json
-```
-
-Les dates ajoutées depuis l’interface admin sont stockées dans **Netlify Blobs** via la fonction :
-
-```text
-/.netlify/functions/add-planning
 ```
 
 ### Variables d’environnement Netlify
@@ -81,4 +52,4 @@ Le fichier `netlify.toml` indique à Netlify où trouver les fonctions serverles
 netlify/functions
 ```
 
-Une fois le site redéployé, Noah et Niwa pourront ajouter des dates depuis l’espace Planning. Les autres membres pourront les consulter.
+Une fois les variables d’environnement configurées, Netlify peut redéployer le site automatiquement depuis GitHub.
