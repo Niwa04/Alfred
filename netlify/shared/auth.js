@@ -7,6 +7,19 @@ const { getDatabaseClient } = require('./database');
 const COOKIE_NAME = 'alfred_session';
 const DEFAULT_MEMBER_PASSWORD = 'Alfred2026';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
+const DEFAULT_MEMBERS = [
+  { username: 'Niwa', displayName: 'Niwa', role: 'admin' },
+  { username: 'Noah', displayName: 'Noah', role: 'admin' },
+  { username: 'Marie', displayName: 'Marie', role: 'member' },
+  { username: 'TomEliott', displayName: 'TomEliott', role: 'member' },
+  { username: 'Stecy', displayName: 'Stecy', role: 'member' },
+  { username: 'Luce', displayName: 'Luce', role: 'member' },
+  { username: 'Ayline', displayName: 'Ayline', role: 'member' },
+  { username: 'Ambre', displayName: 'Ambre', role: 'member' },
+  { username: 'Ezio', displayName: 'Ezio', role: 'member' },
+  { username: 'Thomas', displayName: 'Thomas', role: 'member' },
+  { username: 'Majda', displayName: 'Majda', role: 'member' }
+];
 
 function normalizeMember(member) {
   const username = member.username;
@@ -51,7 +64,7 @@ function getFileMembers() {
 
 function findLocalMember(username) {
   const normalizedUsername = username.trim().toLowerCase();
-  return [...getFileMembers(), ...getExtraMembers()].find(
+  return [...DEFAULT_MEMBERS.map(normalizeMember), ...getFileMembers(), ...getExtraMembers()].find(
     (member) => member.username.toLowerCase() === normalizedUsername
   );
 }
