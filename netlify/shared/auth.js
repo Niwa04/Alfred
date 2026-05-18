@@ -1,25 +1,10 @@
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 
-const { getDatabaseClient } = require('./database');
+const { getDatabaseClient, normalizeDatabaseRows } = require('./database');
 
 const COOKIE_NAME = 'alfred_session';
 const DEFAULT_MEMBER_PASSWORD = 'Alfred2026';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
-const DEFAULT_MEMBERS = [
-  { username: 'Niwa', displayName: 'Niwa', role: 'admin' },
-  { username: 'Noah', displayName: 'Noah', role: 'admin' },
-  { username: 'Marie', displayName: 'Marie', role: 'member' },
-  { username: 'TomEliott', displayName: 'TomEliott', role: 'member' },
-  { username: 'Stecy', displayName: 'Stecy', role: 'member' },
-  { username: 'Luce', displayName: 'Luce', role: 'member' },
-  { username: 'Ayline', displayName: 'Ayline', role: 'member' },
-  { username: 'Ambre', displayName: 'Ambre', role: 'member' },
-  { username: 'Ezio', displayName: 'Ezio', role: 'member' },
-  { username: 'Thomas', displayName: 'Thomas', role: 'member' },
-  { username: 'Majda', displayName: 'Majda', role: 'member' }
-];
 
 function normalizeMember(member) {
   const username = member.username;
@@ -44,59 +29,14 @@ function serializeMember(member) {
   };
 }
 
-function getExtraMembers() {
-  return (process.env.MEMBER_USERS || '')
-    .split(',')
-    .map((username) => username.trim())
-    .filter(Boolean)
-    .map((username) => normalizeMember({ username, displayName: username, role: 'member' }));
-}
-
-function getFileMembers() {
-  try {
-    const membersPath = path.join(__dirname, '..', 'data', 'members.json');
-    const members = JSON.parse(fs.readFileSync(membersPath, 'utf8'));
-    return Array.isArray(members) ? members.map(normalizeMember) : [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function findLocalMember(username) {
-  const normalizedUsername = username.trim().toLowerCase();
-  return [...DEFAULT_MEMBERS.map(normalizeMember), ...getFileMembers(), ...getExtraMembers()].find(
-    (member) => member.username.toLowerCase() === normalizedUsername
-  );
-}
-
-async function seedDefaultMembers(db) {
-  await db.sql`
-    CREATE TABLE IF NOT EXISTS members (
-      username TEXT PRIMARY KEY,
-      display_name TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-
-  for (const member of DEFAULT_MEMBERS) {
-    await db.sql`
-      INSERT INTO members (username, display_name, role)
-      VALUES (${member.username}, ${member.displayName}, ${member.role})
-      ON CONFLICT (username) DO UPDATE SET
-        display_name = EXCLUDED.display_name,
-        role = EXCLUDED.role
-    `;
-  }
-}
-
 async function findDatabaseMember(db, username) {
-  const rows = await db.sql`
+  const result = await db.sql`
     SELECT username, display_name, role
     FROM members
     WHERE lower(username) = lower(${username})
     LIMIT 1
   `;
+  const rows = normalizeDatabaseRows(result);
 
   return rows[0] || null;
 }
@@ -105,21 +45,8 @@ async function findMember(username = '') {
   const normalizedUsername = username.trim();
   if (!normalizedUsername) return null;
 
-  let member;
-
-  try {
-    const db = await getDatabaseClient();
-    member = await findDatabaseMember(db, normalizedUsername);
-
-    if (!member) {
-      await seedDefaultMembers(db);
-      member = await findDatabaseMember(db, normalizedUsername);
-    }
-  } catch (error) {
-    member = findLocalMember(normalizedUsername);
-  }
-
-  member = member || findLocalMember(normalizedUsername);
+  const db = await getDatabaseClient();
+  const member = await findDatabaseMember(db, normalizedUsername);
 
   return member ? normalizeMember(member) : null;
 }

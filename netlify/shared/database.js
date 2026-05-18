@@ -9,6 +9,19 @@ async function getDatabaseClient() {
   return databaseClient;
 }
 
+function normalizeDatabaseRows(result) {
+  if (Array.isArray(result)) {
+    return result;
+  }
+
+  if (Array.isArray(result?.rows)) {
+    return result.rows;
+  }
+
+  return [];
+}
+
 module.exports = {
-  getDatabaseClient
+  getDatabaseClient,
+  normalizeDatabaseRows
 };

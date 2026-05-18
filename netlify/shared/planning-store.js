@@ -1,7 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-const { getDatabaseClient } = require('./database');
+const { getDatabaseClient, normalizeDatabaseRows } = require('./database');
 
 function normalizeDate(value) {
   if (value instanceof Date) {
@@ -48,19 +45,13 @@ function sortEvents(events) {
 }
 
 async function getPlanningEvents() {
-  let events;
-
-  try {
-    const db = await getDatabaseClient();
-    events = await db.sql`
-      SELECT id, event_date, event_time, title, location
-      FROM planning_events
-      ORDER BY event_date ASC, event_time ASC, id ASC
-    `;
-  } catch (error) {
-    const planningPath = path.join(__dirname, '..', 'data', 'planning.json');
-    events = JSON.parse(fs.readFileSync(planningPath, 'utf8'));
-  }
+  const db = await getDatabaseClient();
+  const result = await db.sql`
+    SELECT id, event_date, event_time, title, location
+    FROM planning_events
+    ORDER BY event_date ASC, event_time ASC, id ASC
+  `;
+  const events = normalizeDatabaseRows(result);
 
   return events.map(normalizeEvent);
 }
@@ -79,12 +70,13 @@ async function addPlanningEvent(event, createdBy) {
     return { error: 'La base de données Netlify est nécessaire pour ajouter une date.' };
   }
 
-  const rows = await db.sql`
+  const result = await db.sql`
     INSERT INTO planning_events (event_date, event_time, title, location, created_by)
     VALUES (${validation.event.date}::date, ${validation.event.time}::time, ${validation.event.title}, ${validation.event.location}, ${createdBy})
     ON CONFLICT (event_date, event_time, title, location) DO NOTHING
     RETURNING id, event_date, event_time, title, location
   `;
+  const rows = normalizeDatabaseRows(result);
 
   if (!rows[0]) {
     return { error: 'Cette date existe déjà dans le planning.' };
