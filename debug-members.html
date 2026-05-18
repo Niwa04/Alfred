@@ -110,6 +110,13 @@
       <button id="test-login" type="button">Tester la connexion</button>
       <pre id="result">En attente...</pre>
     </section>
+
+    <section>
+      <h2>Diagnostic serveur Netlify</h2>
+      <p>Ce diagnostic indique si la Function accepte <code>Niwa</code> / <code>Alfred2026</code>, sans afficher le secret serveur en clair.</p>
+      <button id="server-debug" type="button">Lire le diagnostic serveur</button>
+      <pre id="server-result">En attente...</pre>
+    </section>
   </main>
 
   <script src="members.js"></script>
@@ -119,6 +126,8 @@
     const members = document.getElementById('members');
     const result = document.getElementById('result');
     const testButton = document.getElementById('test-login');
+    const serverDebugButton = document.getElementById('server-debug');
+    const serverResult = document.getElementById('server-result');
 
     password.textContent = config.sharedPassword || 'Non trouvé';
     members.innerHTML = config.users.map((member) => `
@@ -147,6 +156,25 @@
         }, null, 2);
       } catch (error) {
         result.textContent = error.message;
+      }
+    });
+
+    serverDebugButton.addEventListener('click', async () => {
+      serverResult.textContent = 'Diagnostic en cours...';
+
+      try {
+        const response = await fetch('/.netlify/functions/debug-auth', {
+          credentials: 'same-origin'
+        });
+        const body = await response.json().catch(() => ({}));
+
+        serverResult.textContent = JSON.stringify({
+          status: response.status,
+          ok: response.ok,
+          body
+        }, null, 2);
+      } catch (error) {
+        serverResult.textContent = error.message;
       }
     });
   </script>
