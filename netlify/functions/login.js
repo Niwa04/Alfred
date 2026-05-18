@@ -18,7 +18,13 @@ exports.handler = async (event) => {
     return jsonResponse(400, { error: 'Requête invalide.' });
   }
 
-  const member = findMember(String(credentials.username || ''));
+  let member;
+  try {
+    member = await findMember(String(credentials.username || ''));
+  } catch (error) {
+    return jsonResponse(503, { error: 'La base de données Netlify n’est pas disponible.' });
+  }
+
   const passwordIsValid = verifyPassword(String(credentials.password || ''));
 
   if (!member || !passwordIsValid) {

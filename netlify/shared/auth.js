@@ -1,35 +1,17 @@
 const crypto = require('crypto');
 
+const { getDatabaseClient } = require('./database');
+
 const COOKIE_NAME = 'alfred_session';
 const DEFAULT_MEMBER_PASSWORD = 'Alfred2026';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
-const MEMBERS = require('../data/members.json');
-
-function getAllowedMembers() {
-  const extraMembers = (process.env.MEMBER_USERS || '')
-    .split(',')
-    .map((username) => username.trim())
-    .filter(Boolean)
-    .map((username) => ({ username, displayName: username, role: 'member' }));
-
-  return [...MEMBERS, ...extraMembers];
-}
 
 function normalizeMember(member) {
+  const username = member.username;
+  const displayName = member.displayName || member.display_name || username;
   const role = member.role === 'admin' ? 'admin' : 'member';
 
-  return {
-    username: member.username,
-    displayName: member.displayName || member.username,
-    role
-  };
-}
-
-function findMember(username = '') {
-  const normalizedUsername = username.trim().toLowerCase();
-  const member = getAllowedMembers().find((allowedMember) => allowedMember.username.toLowerCase() === normalizedUsername);
-
-  return member ? normalizeMember(member) : null;
+  return { username, displayName, role };
 }
 
 function isAdmin(member) {
@@ -45,6 +27,30 @@ function serializeMember(member) {
     role: normalizedMember.role,
     canManagePlanning: isAdmin(normalizedMember)
   };
+}
+
+function getExtraMembers() {
+  return (process.env.MEMBER_USERS || '')
+    .split(',')
+    .map((username) => username.trim())
+    .filter(Boolean)
+    .map((username) => normalizeMember({ username, displayName: username, role: 'member' }));
+}
+
+async function findMember(username = '') {
+  const normalizedUsername = username.trim();
+  if (!normalizedUsername) return null;
+
+  const db = await getDatabaseClient();
+  const rows = await db.sql`
+    SELECT username, display_name, role
+    FROM members
+    WHERE lower(username) = lower(${normalizedUsername})
+    LIMIT 1
+  `;
+  const member = rows[0] || getExtraMembers().find((extraMember) => extraMember.username.toLowerCase() === normalizedUsername.toLowerCase());
+
+  return member ? normalizeMember(member) : null;
 }
 
 function getMemberPassword() {
@@ -115,7 +121,7 @@ function parseCookies(cookieHeader = '') {
     }, {});
 }
 
-function getSessionMember(event) {
+async function getSessionMember(event) {
   const secret = getSessionSecret();
   if (!secret) return null;
 
@@ -129,16 +135,18 @@ function getSessionMember(event) {
     return null;
   }
 
+  let sessionData;
   try {
-    const sessionData = JSON.parse(base64UrlDecode(payload));
-    if (!sessionData.expiresAt || sessionData.expiresAt < Math.floor(Date.now() / 1000)) {
-      return null;
-    }
-
-    return findMember(sessionData.username) || null;
+    sessionData = JSON.parse(base64UrlDecode(payload));
   } catch (error) {
     return null;
   }
+
+  if (!sessionData.expiresAt || sessionData.expiresAt < Math.floor(Date.now() / 1000)) {
+    return null;
+  }
+
+  return findMember(sessionData.username);
 }
 
 function jsonResponse(statusCode, body, headers = {}) {
@@ -159,7 +167,7 @@ module.exports = {
   findMember,
   getSessionMember,
   isAdmin,
-  serializeMember,
   jsonResponse,
+  serializeMember,
   verifyPassword
 };

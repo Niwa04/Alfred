@@ -6,7 +6,13 @@ exports.handler = async (event) => {
     return jsonResponse(405, { error: 'Méthode non autorisée.' }, { Allow: 'POST' });
   }
 
-  const member = getSessionMember(event);
+  let member;
+  try {
+    member = await getSessionMember(event);
+  } catch (error) {
+    return jsonResponse(503, { error: 'La base de données Netlify n’est pas disponible.' });
+  }
+
   if (!member) {
     return jsonResponse(401, { error: 'Connexion requise.' });
   }
@@ -22,13 +28,17 @@ exports.handler = async (event) => {
     return jsonResponse(400, { error: 'Requête invalide.' });
   }
 
-  const result = await addPlanningEvent(payload);
-  if (result.error) {
-    return jsonResponse(400, { error: result.error });
-  }
+  try {
+    const result = await addPlanningEvent(payload, member.username);
+    if (result.error) {
+      return jsonResponse(400, { error: result.error });
+    }
 
-  return jsonResponse(201, {
-    event: result.event,
-    events: result.events
-  });
+    return jsonResponse(201, {
+      event: result.event,
+      events: result.events
+    });
+  } catch (error) {
+    return jsonResponse(503, { error: 'La base de données Netlify n’est pas disponible.' });
+  }
 };
