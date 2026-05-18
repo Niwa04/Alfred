@@ -475,6 +475,60 @@ h4.section-title {
   margin: 12px 0 0;
   color: rgba(233,238,247,.78);
 }
+
+.planning-admin-form{
+  display:grid;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid rgba(215,180,106,.28);
+  border-radius: var(--radius);
+  background: rgba(0,0,0,.18);
+  text-align:left;
+}
+.planning-admin-form[hidden]{
+  display:none;
+}
+.planning-admin-form h3{
+  margin: 0;
+  font-family: Cinzel, serif;
+  color: var(--gold2);
+  letter-spacing: .06em;
+}
+.planning-admin-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.planning-admin-form label{
+  display:grid;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(233,238,247,.78);
+}
+.planning-admin-form input{
+  width:100%;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  background: rgba(0,0,0,.22);
+  color: var(--text);
+  padding: 13px 14px;
+  font: inherit;
+  outline: none;
+}
+.planning-admin-form input:focus{
+  border-color: rgba(215,180,106,.75);
+  box-shadow: 0 0 0 3px rgba(215,180,106,.14);
+}
+.planning-admin-feedback{
+  min-height: 20px;
+  margin: 0;
+  color: var(--gold2);
+  font-weight: 600;
+}
+
 .planning-events{
   display:grid;
   gap: 12px;
@@ -522,6 +576,9 @@ h4.section-title {
   color: rgba(233,238,247,.75);
 }
 @media (max-width: 520px){
+  .planning-admin-grid{
+    grid-template-columns: 1fr;
+  }
   .planning-event{
     align-items:flex-start;
     flex-direction:column;

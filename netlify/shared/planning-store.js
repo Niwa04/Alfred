@@ -1,13 +1,22 @@
-const defaultPlanningEvents = require('../data/planning.json');
+const { getDatabaseClient } = require('./database');
 
-const STORE_NAME = 'alfred-planning';
-const CUSTOM_EVENTS_KEY = 'custom-events';
+function normalizeDate(value) {
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  return String(value || '').slice(0, 10).trim();
+}
+
+function normalizeTime(value) {
+  return String(value || '').slice(0, 5).trim();
+}
 
 function normalizeEvent(event) {
   return {
-    id: event.id || `${event.date}-${event.time}-${event.title}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    date: String(event.date || '').trim(),
-    time: String(event.time || '').trim(),
+    id: String(event.id || `${event.date || event.event_date}-${event.time || event.event_time}-${event.title}`.toLowerCase().replace(/[^a-z0-9]+/g, '-')),
+    date: normalizeDate(event.date || event.event_date),
+    time: normalizeTime(event.time || event.event_time),
     title: String(event.title || '').trim(),
     location: String(event.location || '').trim()
   };
@@ -35,48 +44,41 @@ function sortEvents(events) {
   return [...events].sort((left, right) => `${left.date} ${left.time}`.localeCompare(`${right.date} ${right.time}`));
 }
 
-async function getBlobStore() {
-  try {
-    const { getStore } = require('@netlify/blobs');
-    return getStore(STORE_NAME);
-  } catch (error) {
-    return null;
-  }
-}
-
-async function getCustomEvents() {
-  const store = await getBlobStore();
-  if (!store) return [];
-
-  const events = await store.get(CUSTOM_EVENTS_KEY, { type: 'json' });
-  return Array.isArray(events) ? events.map(normalizeEvent) : [];
-}
-
 async function getPlanningEvents() {
-  const customEvents = await getCustomEvents();
-  return sortEvents([...defaultPlanningEvents.map(normalizeEvent), ...customEvents]);
+  const db = await getDatabaseClient();
+  const events = await db.sql`
+    SELECT id, event_date, event_time, title, location
+    FROM planning_events
+    ORDER BY event_date ASC, event_time ASC, id ASC
+  `;
+
+  return events.map(normalizeEvent);
 }
 
-async function addPlanningEvent(event) {
+async function addPlanningEvent(event, createdBy) {
   const validation = validateEvent(event);
   if (validation.error) {
     return validation;
   }
 
-  const store = await getBlobStore();
-  if (!store) {
-    return { error: 'Le stockage Netlify Blobs n’est pas disponible.' };
+  const db = await getDatabaseClient();
+  const rows = await db.sql`
+    INSERT INTO planning_events (event_date, event_time, title, location, created_by)
+    VALUES (${validation.event.date}::date, ${validation.event.time}::time, ${validation.event.title}, ${validation.event.location}, ${createdBy})
+    ON CONFLICT (event_date, event_time, title, location) DO NOTHING
+    RETURNING id, event_date, event_time, title, location
+  `;
+
+  if (!rows[0]) {
+    return { error: 'Cette date existe déjà dans le planning.' };
   }
 
-  const customEvents = await getCustomEvents();
-  const eventWithId = {
-    ...validation.event,
-    id: `${Date.now()}-${validation.event.id}`
+  const addedEvent = normalizeEvent(rows[0]);
+
+  return {
+    event: addedEvent,
+    events: sortEvents([...(await getPlanningEvents())])
   };
-
-  await store.setJSON(CUSTOM_EVENTS_KEY, [...customEvents, eventWithId]);
-
-  return { event: eventWithId, events: await getPlanningEvents() };
 }
 
 module.exports = {
