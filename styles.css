@@ -403,3 +403,71 @@ h4.section-title {
     margin-top: 100px;
     margin-bottom: 27px;
 }
+/* Espace membre */
+.member-area{
+  max-width: 780px;
+}
+.member-card,
+.planning-card{
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.login-form{
+  display:grid;
+  gap: 12px;
+}
+.login-form label{
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(233,238,247,.78);
+}
+.login-form input{
+  width:100%;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  background: rgba(0,0,0,.22);
+  color: var(--text);
+  padding: 13px 14px;
+  font: inherit;
+  outline: none;
+}
+.login-form input:focus{
+  border-color: rgba(215,180,106,.75);
+  box-shadow: 0 0 0 3px rgba(215,180,106,.14);
+}
+.login-feedback{
+  min-height: 20px;
+  margin: 0;
+  color: #ffb8b8;
+  font-weight: 600;
+}
+.member-session{
+  text-align:center;
+}
+.member-welcome{
+  margin: 0 0 18px;
+  color: rgba(233,238,247,.86);
+}
+.member-welcome strong,
+.planning-greeting{
+  color: var(--gold2);
+}
+.member-actions{
+  display:flex;
+  justify-content:center;
+  gap: 12px;
+  flex-wrap:wrap;
+}
+.planning-card{
+  text-align:center;
+}
+.planning-greeting{
+  margin: 20px 0 0;
+  font-family: Cinzel, serif;
+  font-size: clamp(30px, 5vw, 58px);
+  letter-spacing: .08em;
+}
