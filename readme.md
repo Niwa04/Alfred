@@ -27,16 +27,22 @@ Le planning affiché dans l’espace membre est déclaré dans :
 netlify/data/planning.json
 ```
 
-### Variables d’environnement à ajouter dans Netlify
+### Variables d’environnement Netlify
 
-Dans Netlify, ajouter ces variables dans **Site configuration > Environment variables** :
+Le site fonctionne directement avec le mot de passe par défaut :
+
+```text
+Alfred2026
+```
+
+Pour personnaliser ou renforcer la configuration, tu peux ajouter ces variables dans **Site configuration > Environment variables** :
 
 ```text
 MEMBER_PASSWORD=Alfred2026
 SESSION_SECRET=une-phrase-longue-et-secrete
 ```
 
-`SESSION_SECRET` doit rester privé. Il sert à signer la session de connexion.
+`SESSION_SECRET` doit rester privé. Il sert à signer la session de connexion. Si tu ne le définis pas, la session utilise le mot de passe membre comme secret de secours.
 
 ## Déploiement
 

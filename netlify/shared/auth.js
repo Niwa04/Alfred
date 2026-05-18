@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 
 const COOKIE_NAME = 'alfred_session';
+const DEFAULT_MEMBER_PASSWORD = 'Alfred2026';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
 const MEMBERS = require('../data/members.json');
 
@@ -20,11 +21,11 @@ function findMember(username = '') {
 }
 
 function getMemberPassword() {
-  return process.env.MEMBER_PASSWORD || '';
+  return process.env.MEMBER_PASSWORD || DEFAULT_MEMBER_PASSWORD;
 }
 
 function getSessionSecret() {
-  return process.env.SESSION_SECRET || process.env.MEMBER_PASSWORD || '';
+  return process.env.SESSION_SECRET || process.env.MEMBER_PASSWORD || DEFAULT_MEMBER_PASSWORD;
 }
 
 function timingSafeEqual(left, right) {
@@ -40,7 +41,7 @@ function timingSafeEqual(left, right) {
 
 function verifyPassword(password = '') {
   const expectedPassword = getMemberPassword();
-  return Boolean(expectedPassword) && timingSafeEqual(String(password), expectedPassword);
+  return Boolean(expectedPassword) && timingSafeEqual(String(password).trim(), expectedPassword);
 }
 
 function base64UrlEncode(value) {
