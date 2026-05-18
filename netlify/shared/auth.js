@@ -69,6 +69,38 @@ function findLocalMember(username) {
   );
 }
 
+async function seedDefaultMembers(db) {
+  await db.sql`
+    CREATE TABLE IF NOT EXISTS members (
+      username TEXT PRIMARY KEY,
+      display_name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  for (const member of DEFAULT_MEMBERS) {
+    await db.sql`
+      INSERT INTO members (username, display_name, role)
+      VALUES (${member.username}, ${member.displayName}, ${member.role})
+      ON CONFLICT (username) DO UPDATE SET
+        display_name = EXCLUDED.display_name,
+        role = EXCLUDED.role
+    `;
+  }
+}
+
+async function findDatabaseMember(db, username) {
+  const rows = await db.sql`
+    SELECT username, display_name, role
+    FROM members
+    WHERE lower(username) = lower(${username})
+    LIMIT 1
+  `;
+
+  return rows[0] || null;
+}
+
 async function findMember(username = '') {
   const normalizedUsername = username.trim();
   if (!normalizedUsername) return null;
@@ -77,13 +109,12 @@ async function findMember(username = '') {
 
   try {
     const db = await getDatabaseClient();
-    const rows = await db.sql`
-      SELECT username, display_name, role
-      FROM members
-      WHERE lower(username) = lower(${normalizedUsername})
-      LIMIT 1
-    `;
-    member = rows[0];
+    member = await findDatabaseMember(db, normalizedUsername);
+
+    if (!member) {
+      await seedDefaultMembers(db);
+      member = await findDatabaseMember(db, normalizedUsername);
+    }
   } catch (error) {
     member = findLocalMember(normalizedUsername);
   }
