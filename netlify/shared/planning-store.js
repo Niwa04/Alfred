@@ -1,5 +1,29 @@
 const { getDatabaseClient, normalizeDatabaseRows } = require('./database');
 
+const ARTIST_ROLES = ['chanteur', 'comedien', 'danseur'];
+
+function normalizeArtistRoles(value) {
+  let roles = value;
+
+  if (typeof roles === 'string') {
+    try {
+      roles = JSON.parse(roles);
+    } catch (error) {
+      roles = roles.split(',');
+    }
+  }
+
+  if (!Array.isArray(roles)) {
+    roles = [];
+  }
+
+  return [...new Set(
+    roles
+      .map((role) => String(role || '').trim().toLowerCase())
+      .filter((role) => ARTIST_ROLES.includes(role))
+  )];
+}
+
 function normalizeDate(value) {
   if (value instanceof Date) {
     return value.toISOString().slice(0, 10);
@@ -19,6 +43,7 @@ function normalizeEvent(event) {
     time: normalizeTime(event.time || event.event_time),
     title: String(event.title || '').trim(),
     location: String(event.location || '').trim(),
+    targetRoles: normalizeArtistRoles(event.targetRoles || event.target_roles),
     attendees: event.attendees || [],
     currentUserIsPresent: Boolean(event.currentUserIsPresent)
   };
@@ -53,6 +78,16 @@ async function ensurePlanningAttendanceTables(db) {
   `;
 
   await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS artist_roles JSONB NOT NULL DEFAULT '[]'::jsonb
+  `;
+
+  await db.sql`
+    ALTER TABLE planning_events
+    ADD COLUMN IF NOT EXISTS target_roles JSONB NOT NULL DEFAULT '[]'::jsonb
+  `;
+
+  await db.sql`
     CREATE TABLE IF NOT EXISTS planning_attendance (
       event_id BIGINT NOT NULL REFERENCES planning_events(id) ON DELETE CASCADE,
       username TEXT NOT NULL REFERENCES members(username) ON DELETE CASCADE,
@@ -61,6 +96,35 @@ async function ensurePlanningAttendanceTables(db) {
       PRIMARY KEY (event_id, username)
     )
   `;
+}
+
+async function getMemberForPlanning(db, username = '') {
+  const normalizedUsername = String(username || '').trim();
+  if (!normalizedUsername) return null;
+
+  const result = await db.sql`
+    SELECT username, role, artist_roles
+    FROM members
+    WHERE lower(username) = lower(${normalizedUsername})
+    LIMIT 1
+  `;
+  const member = normalizeDatabaseRows(result)[0];
+  if (!member) return null;
+
+  return {
+    username: member.username,
+    role: member.role === 'admin' ? 'admin' : 'member',
+    artistRoles: normalizeArtistRoles(member.artist_roles)
+  };
+}
+
+function eventIsVisibleForMember(event, member) {
+  const targetRoles = normalizeArtistRoles(event.target_roles || event.targetRoles);
+  if (!targetRoles.length) return true;
+  if (member?.role === 'admin') return true;
+
+  const memberRoles = normalizeArtistRoles(member?.artistRoles || member?.artist_roles);
+  return targetRoles.some((role) => memberRoles.includes(role));
 }
 
 function normalizeAttendee(attendee) {
@@ -87,13 +151,16 @@ async function getEventAttendees(db, eventId) {
 async function getPlanningEvents(currentUsername = '') {
   const db = await getDatabaseClient();
   await ensurePlanningAttendanceTables(db);
+  const currentMember = await getMemberForPlanning(db, currentUsername);
 
   const result = await db.sql`
-    SELECT id, event_date, event_time, title, location
+    SELECT id, event_date, event_time, title, location, target_roles
     FROM planning_events
     ORDER BY event_date ASC, event_time ASC, id ASC
   `;
-  const events = normalizeDatabaseRows(result);
+  const events = normalizeDatabaseRows(result).filter((event) => (
+    currentUsername ? eventIsVisibleForMember(event, currentMember) : true
+  ));
 
   const normalizedEvents = [];
 
@@ -134,10 +201,10 @@ async function addPlanningEvent(event, createdBy) {
   }
 
   const result = await db.sql`
-    INSERT INTO planning_events (event_date, event_time, title, location, created_by)
-    VALUES (${validation.event.date}::date, ${validation.event.time}::time, ${validation.event.title}, ${validation.event.location}, ${createdBy})
+    INSERT INTO planning_events (event_date, event_time, title, location, target_roles, created_by)
+    VALUES (${validation.event.date}::date, ${validation.event.time}::time, ${validation.event.title}, ${validation.event.location}, ${JSON.stringify(validation.event.targetRoles)}::jsonb, ${createdBy})
     ON CONFLICT (event_date, event_time, title, location) DO NOTHING
-    RETURNING id, event_date, event_time, title, location
+    RETURNING id, event_date, event_time, title, location, target_roles
   `;
   const rows = normalizeDatabaseRows(result);
 
@@ -189,13 +256,16 @@ async function updatePlanningAttendance(eventId, username, isPresent) {
   await ensurePlanningAttendanceTables(db);
 
   const eventResult = await db.sql`
-    SELECT id
+    SELECT id, target_roles
     FROM planning_events
     WHERE id = ${normalizedEventId}
     LIMIT 1
   `;
 
-  if (!normalizeDatabaseRows(eventResult)[0]) {
+  const event = normalizeDatabaseRows(eventResult)[0];
+  const member = await getMemberForPlanning(db, normalizedUsername);
+
+  if (!event || !eventIsVisibleForMember(event, member)) {
     return { error: 'Evenement introuvable.' };
   }
 
@@ -213,9 +283,11 @@ async function updatePlanningAttendance(eventId, username, isPresent) {
 }
 
 module.exports = {
+  ARTIST_ROLES,
   addPlanningEvent,
   deletePlanningEvent,
   getPlanningEvents,
+  normalizeArtistRoles,
   updatePlanningAttendance,
   validateEvent
 };

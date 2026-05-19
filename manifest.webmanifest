@@ -1,0 +1,26 @@
+{
+  "name": "ALFRED - Espace membre",
+  "short_name": "ALFRED",
+  "description": "Espace membre du spectacle musical ALFRED.",
+  "lang": "fr",
+  "start_url": "./login.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050806",
+  "theme_color": "#050806",
+  "icons": [
+    {
+      "src": "assets/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

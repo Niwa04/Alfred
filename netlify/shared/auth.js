@@ -5,14 +5,38 @@ const { getDatabaseClient, normalizeDatabaseRows } = require('./database');
 const COOKIE_NAME = 'alfred_session';
 const DEFAULT_MEMBER_PASSWORD = 'Alfred2026';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
+const ARTIST_ROLES = ['chanteur', 'comedien', 'danseur'];
+
+function normalizeArtistRoles(value) {
+  let roles = value;
+
+  if (typeof roles === 'string') {
+    try {
+      roles = JSON.parse(roles);
+    } catch (error) {
+      roles = roles.split(',');
+    }
+  }
+
+  if (!Array.isArray(roles)) {
+    roles = [];
+  }
+
+  return [...new Set(
+    roles
+      .map((role) => String(role || '').trim().toLowerCase())
+      .filter((role) => ARTIST_ROLES.includes(role))
+  )];
+}
 
 function normalizeMember(member) {
   const username = member.username;
   const displayName = member.displayName || member.display_name || username;
   const role = member.role === 'admin' ? 'admin' : 'member';
   const imagePath = member.imagePath || member.image_path || '';
+  const artistRoles = normalizeArtistRoles(member.artistRoles || member.artist_roles);
 
-  return { username, displayName, role, imagePath };
+  return { username, displayName, role, imagePath, artistRoles };
 }
 
 function isAdmin(member) {
@@ -27,13 +51,28 @@ function serializeMember(member) {
     displayName: normalizedMember.displayName,
     role: normalizedMember.role,
     imagePath: normalizedMember.imagePath,
+    artistRoles: normalizedMember.artistRoles,
     canManagePlanning: isAdmin(normalizedMember)
   };
 }
 
+async function ensureMemberSessionColumns(db) {
+  await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS image_path TEXT
+  `;
+
+  await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS artist_roles JSONB NOT NULL DEFAULT '[]'::jsonb
+  `;
+}
+
 async function findDatabaseMember(db, username) {
+  await ensureMemberSessionColumns(db);
+
   const result = await db.sql`
-    SELECT username, display_name, role
+    SELECT username, display_name, role, image_path, artist_roles
     FROM members
     WHERE lower(username) = lower(${username})
     LIMIT 1

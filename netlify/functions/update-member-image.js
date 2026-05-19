@@ -1,5 +1,5 @@
 const { getSessionMember, isAdmin, jsonResponse } = require('../shared/auth');
-const { updateMemberImage } = require('../shared/member-store');
+const { updateMemberProfile } = require('../shared/member-store');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -29,7 +29,10 @@ exports.handler = async (event) => {
   }
 
   try {
-    const result = await updateMemberImage(payload.username, payload.imagePath);
+    const result = await updateMemberProfile(payload.username, {
+      imagePath: payload.imagePath,
+      artistRoles: payload.artistRoles
+    });
     if (result.error) {
       return jsonResponse(400, { error: result.error });
     }

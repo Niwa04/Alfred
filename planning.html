@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Planning — ALFRED</title>
+  <meta name="theme-color" content="#050806">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -51,6 +54,22 @@
               <input id="planning-location" name="location" type="text" placeholder="Salle, theatre..." required>
             </label>
           </div>
+          <fieldset class="planning-role-fieldset">
+            <legend>Visible pour</legend>
+            <label>
+              <input name="targetRoles" type="checkbox" value="chanteur">
+              Chanteurs
+            </label>
+            <label>
+              <input name="targetRoles" type="checkbox" value="comedien">
+              Comediens
+            </label>
+            <label>
+              <input name="targetRoles" type="checkbox" value="danseur">
+              Danseurs
+            </label>
+            <span>Aucun role coche = tout le monde</span>
+          </fieldset>
           <p class="planning-admin-feedback" id="planning-admin-feedback" role="status" aria-live="polite"></p>
           <button class="btn primary" type="submit">Ajouter la date</button>
         </form>
@@ -116,6 +135,26 @@
       `;
     }
 
+    function getRoleLabel(role) {
+      return {
+        chanteur: 'Chanteurs',
+        comedien: 'Comediens',
+        danseur: 'Danseurs'
+      }[role] || role;
+    }
+
+    function renderTargetRoles(roles = []) {
+      if (!roles.length) {
+        return '<div class="planning-role-tags"><span>Toute l equipe</span></div>';
+      }
+
+      return `
+        <div class="planning-role-tags" aria-label="Roles concernes">
+          ${roles.map((role) => `<span>${escapeHtml(getRoleLabel(role))}</span>`).join('')}
+        </div>
+      `;
+    }
+
     function openDatePicker() {
       if (typeof planningDate.showPicker === 'function') {
         try {
@@ -143,6 +182,7 @@
           <div class="planning-event-body">
             <h2>${escapeHtml(event.title)}</h2>
             <p>${escapeHtml(event.location)}</p>
+            ${renderTargetRoles(event.targetRoles)}
             ${renderAttendees(event.attendees)}
             <div class="planning-attendance-actions" role="group" aria-label="Presence">
               <button class="btn small planning-presence-yes ${event.currentUserIsPresent ? 'is-selected' : ''} planning-attendance" type="button" data-id="${escapeHtml(event.id)}" data-present="true">
@@ -181,6 +221,7 @@
       planningAdminFeedback.textContent = 'Ajout de la date en cours...';
 
       const formData = new FormData(planningAdminForm);
+      const targetRoles = formData.getAll('targetRoles').map((role) => String(role || ''));
       try {
         const data = await requestJson('/.netlify/functions/add-planning', {
           method: 'POST',
@@ -188,7 +229,8 @@
             date: String(formData.get('date') || ''),
             time: String(formData.get('time') || ''),
             title: String(formData.get('title') || ''),
-            location: String(formData.get('location') || '')
+            location: String(formData.get('location') || ''),
+            targetRoles
           })
         });
         planningAdminForm.reset();

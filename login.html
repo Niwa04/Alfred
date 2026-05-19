@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Connexion — ALFRED</title>
+  <meta name="theme-color" content="#050806">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -15,6 +18,13 @@
       <div class="container member-area">
         <h1 class="section-title gold">Espace membre</h1>
         <p class="section-subtitle">Connectez-vous pour acceder au planning de l'equipe.</p>
+        <div class="member-install-card" id="pwa-install-card" hidden>
+          <div>
+            <strong>Installer l'espace membre</strong>
+            <span>Ajoutez ALFRED sur votre ecran d'accueil pour y acceder plus vite.</span>
+          </div>
+          <button class="btn ghost small" id="pwa-install-button" type="button">Installer</button>
+        </div>
 
         <div class="member-card" id="login-card">
           <form class="login-form" id="login-form">
@@ -47,6 +57,43 @@
     const memberName = document.getElementById('member-name');
     const logoutButton = document.getElementById('logout-button');
     const feedback = document.getElementById('login-feedback');
+    const pwaInstallCard = document.getElementById('pwa-install-card');
+    const pwaInstallButton = document.getElementById('pwa-install-button');
+    let deferredInstallPrompt = null;
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+
+    function isPwaInstalled() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      if (!isPwaInstalled()) {
+        pwaInstallCard.hidden = false;
+      }
+    });
+
+    pwaInstallButton.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+
+      pwaInstallButton.disabled = true;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice.catch(() => null);
+      deferredInstallPrompt = null;
+      pwaInstallCard.hidden = true;
+      pwaInstallButton.disabled = false;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      pwaInstallCard.hidden = true;
+    });
 
     async function requestJson(url, options = {}) {
       const response = await fetch(url, {

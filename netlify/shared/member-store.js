@@ -29,12 +29,37 @@ const DEFAULT_MEMBER_IMAGES = {
   TomEliott: 'assets/membres/tom_eliott_proxy.png'
 };
 
+const ARTIST_ROLES = ['chanteur', 'comedien', 'danseur'];
+
+function normalizeArtistRoles(value) {
+  let roles = value;
+
+  if (typeof roles === 'string') {
+    try {
+      roles = JSON.parse(roles);
+    } catch (error) {
+      roles = roles.split(',');
+    }
+  }
+
+  if (!Array.isArray(roles)) {
+    roles = [];
+  }
+
+  return [...new Set(
+    roles
+      .map((role) => String(role || '').trim().toLowerCase())
+      .filter((role) => ARTIST_ROLES.includes(role))
+  )];
+}
+
 function normalizeMember(row) {
   return {
     username: row.username,
     displayName: row.displayName || row.display_name || row.username,
     role: row.role === 'admin' ? 'admin' : 'member',
-    imagePath: row.imagePath || row.image_path || DEFAULT_MEMBER_IMAGES[row.username] || ''
+    imagePath: row.imagePath || row.image_path || DEFAULT_MEMBER_IMAGES[row.username] || '',
+    artistRoles: normalizeArtistRoles(row.artistRoles || row.artist_roles)
   };
 }
 
@@ -58,6 +83,11 @@ async function ensureMemberImageColumn(db) {
     ADD COLUMN IF NOT EXISTS image_path TEXT
   `;
 
+  await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS artist_roles JSONB NOT NULL DEFAULT '[]'::jsonb
+  `;
+
   for (const [username, imagePath] of Object.entries(DEFAULT_MEMBER_IMAGES)) {
     await db.sql`
       UPDATE members
@@ -72,7 +102,7 @@ async function getMembers() {
   await ensureMemberImageColumn(db);
 
   const result = await db.sql`
-    SELECT username, display_name, role, image_path
+    SELECT username, display_name, role, image_path, artist_roles
     FROM members
     ORDER BY display_name ASC, username ASC
   `;
@@ -81,24 +111,31 @@ async function getMembers() {
 }
 
 async function updateMemberImage(username = '', imagePath = '') {
+  return updateMemberProfile(username, { imagePath });
+}
+
+async function updateMemberProfile(username = '', profile = {}) {
   const normalizedUsername = String(username).trim();
   if (!normalizedUsername) {
     return { error: 'Membre introuvable.' };
   }
 
-  const validation = validateImagePath(imagePath);
+  const validation = validateImagePath(profile.imagePath);
   if (validation.error) {
     return validation;
   }
+  const artistRoles = normalizeArtistRoles(profile.artistRoles);
 
   const db = await getDatabaseClient();
   await ensureMemberImageColumn(db);
 
   const result = await db.sql`
     UPDATE members
-    SET image_path = ${validation.imagePath}
+    SET
+      image_path = ${validation.imagePath},
+      artist_roles = ${JSON.stringify(artistRoles)}::jsonb
     WHERE lower(username) = lower(${normalizedUsername})
-    RETURNING username, display_name, role, image_path
+    RETURNING username, display_name, role, image_path, artist_roles
   `;
   const rows = normalizeDatabaseRows(result);
 
@@ -114,6 +151,9 @@ async function updateMemberImage(username = '', imagePath = '') {
 
 module.exports = {
   AVAILABLE_IMAGES,
+  ARTIST_ROLES,
   getMembers,
-  updateMemberImage
+  normalizeArtistRoles,
+  updateMemberImage,
+  updateMemberProfile
 };

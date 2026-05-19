@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Membres — ALFRED</title>
+  <meta name="theme-color" content="#050806">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -47,6 +50,21 @@
           Chemin personnalise
           <input class="member-image-input" type="text" placeholder="assets/niwa_proxy.png">
         </label>
+        <fieldset class="member-roles-fieldset">
+          <legend>Roles artistiques</legend>
+          <label>
+            <input class="member-role-checkbox" type="checkbox" value="chanteur">
+            Chanteur
+          </label>
+          <label>
+            <input class="member-role-checkbox" type="checkbox" value="comedien">
+            Comedien
+          </label>
+          <label>
+            <input class="member-role-checkbox" type="checkbox" value="danseur">
+            Danseur
+          </label>
+        </fieldset>
         <button class="btn primary small member-save" type="button">Enregistrer</button>
       </div>
     </article>
@@ -95,12 +113,16 @@
         const role = node.querySelector('p');
         const select = node.querySelector('.member-image-select');
         const input = node.querySelector('.member-image-input');
+        const roleCheckboxes = [...node.querySelectorAll('.member-role-checkbox')];
         const button = node.querySelector('.member-save');
 
         title.textContent = member.displayName;
         role.textContent = member.role === 'admin' ? 'Administrateur' : 'Membre';
         input.value = member.imagePath || '';
         setImagePreview(img, member.imagePath);
+        roleCheckboxes.forEach((checkbox) => {
+          checkbox.checked = (member.artistRoles || []).includes(checkbox.value);
+        });
 
         select.innerHTML = [
           '<option value="">Aucune image</option>',
@@ -127,7 +149,10 @@
               method: 'POST',
               body: JSON.stringify({
                 username: member.username,
-                imagePath: input.value
+                imagePath: input.value,
+                artistRoles: roleCheckboxes
+                  .filter((checkbox) => checkbox.checked)
+                  .map((checkbox) => checkbox.value)
               })
             });
             renderMembers(data.members);
