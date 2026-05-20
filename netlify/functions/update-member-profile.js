@@ -17,10 +17,6 @@ exports.handler = async (event) => {
     return jsonResponse(401, { error: 'Connexion requise.' });
   }
 
-  if (!isAdmin(member)) {
-    return jsonResponse(403, { error: 'Acces reserve aux administrateurs.' });
-  }
-
   let payload;
   try {
     payload = JSON.parse(event.body || '{}');
@@ -28,17 +24,26 @@ exports.handler = async (event) => {
     return jsonResponse(400, { error: 'Requete invalide.' });
   }
 
+  const targetUsername = isAdmin(member) && payload.username ? payload.username : member.username;
+
   try {
-    const result = await updateMemberProfile(payload.username, {
+    const result = await updateMemberProfile(targetUsername, {
+      displayName: payload.displayName,
       imagePath: payload.imagePath,
       artistRoles: payload.artistRoles,
+      age: payload.age,
+      displayRole: payload.displayRole,
+      description: payload.description,
+      gallery: payload.gallery,
       displayOrder: payload.displayOrder
     });
     if (result.error) {
       return jsonResponse(400, { error: result.error });
     }
 
-    return jsonResponse(200, result);
+    return jsonResponse(200, {
+      member: result.member
+    });
   } catch (error) {
     return jsonResponse(503, { error: 'La base de donnees Netlify n est pas disponible.' });
   }

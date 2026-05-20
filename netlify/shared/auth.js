@@ -35,8 +35,39 @@ function normalizeMember(member) {
   const role = member.role === 'admin' ? 'admin' : 'member';
   const imagePath = member.imagePath || member.image_path || '';
   const artistRoles = normalizeArtistRoles(member.artistRoles || member.artist_roles);
+  const age = Number.parseInt(member.age, 10);
+  const displayRole = member.displayRole || member.display_role || '';
+  const description = member.description || '';
+  const gallery = normalizeGallery(member.gallery);
+  const displayOrder = Number.parseInt(member.displayOrder || member.display_order, 10);
 
-  return { username, displayName, role, imagePath, artistRoles };
+  return {
+    username,
+    displayName,
+    role,
+    imagePath,
+    artistRoles,
+    age: Number.isFinite(age) ? age : null,
+    displayRole,
+    description,
+    gallery,
+    displayOrder: Number.isFinite(displayOrder) ? displayOrder : null
+  };
+}
+
+function normalizeGallery(value) {
+  if (Array.isArray(value)) return value;
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  return [];
 }
 
 function isAdmin(member) {
@@ -52,6 +83,11 @@ function serializeMember(member) {
     role: normalizedMember.role,
     imagePath: normalizedMember.imagePath,
     artistRoles: normalizedMember.artistRoles,
+    age: normalizedMember.age,
+    displayRole: normalizedMember.displayRole,
+    description: normalizedMember.description,
+    gallery: normalizedMember.gallery,
+    displayOrder: normalizedMember.displayOrder,
     canManagePlanning: isAdmin(normalizedMember)
   };
 }
@@ -66,13 +102,38 @@ async function ensureMemberSessionColumns(db) {
     ALTER TABLE members
     ADD COLUMN IF NOT EXISTS artist_roles JSONB NOT NULL DEFAULT '[]'::jsonb
   `;
+
+  await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS age INTEGER
+  `;
+
+  await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS display_role TEXT
+  `;
+
+  await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS description TEXT
+  `;
+
+  await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS gallery JSONB NOT NULL DEFAULT '[]'::jsonb
+  `;
+
+  await db.sql`
+    ALTER TABLE members
+    ADD COLUMN IF NOT EXISTS display_order INTEGER
+  `;
 }
 
 async function findDatabaseMember(db, username) {
   await ensureMemberSessionColumns(db);
 
   const result = await db.sql`
-    SELECT username, display_name, role, image_path, artist_roles
+    SELECT username, display_name, role, image_path, artist_roles, age, display_role, description, gallery, display_order
     FROM members
     WHERE lower(username) = lower(${username})
     LIMIT 1
