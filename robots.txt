@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /login.html
+Disallow: /planning.html
+Disallow: /profil.html
+Disallow: /membres-admin.html
+Disallow: /dates-admin.html
+Disallow: /debug-members.html
+Disallow: /.netlify/
+Disallow: /netlify/
+
+Sitemap: https://alfred-spectacle.fr/sitemap.xml

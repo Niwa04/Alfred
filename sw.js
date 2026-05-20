@@ -1,8 +1,9 @@
-const CACHE_NAME = 'alfred-pwa-v1';
+const CACHE_NAME = 'alfred-pwa-v2';
 const STATIC_ASSETS = [
   './',
   './login.html',
   './planning.html',
+  './profil.html',
   './styles.css',
   './manifest.webmanifest',
   './assets/logo2.png',

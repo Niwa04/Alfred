@@ -3,11 +3,58 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ALFRED — Spectacle musical</title>
+  <title>ALFRED - Spectacle musical a Lille</title>
+  <meta name="description" content="ALFRED est un spectacle musical original a Lille, porte par une troupe d'artistes, avec theatre, chant, danse, mystere et emotion. Decouvrez l'univers, les artistes et les dates du spectacle.">
+  <meta name="keywords" content="Alfred, Alfred Lille, spectacle musical Lille, comedie musicale Lille, theatre musical Lille, troupe Alfred">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://alfred-spectacle.fr/">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/pwa-icon-192.png">
+  <link rel="shortcut icon" href="assets/pwa-icon-192.png">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="ALFRED">
+  <meta property="og:title" content="ALFRED - Spectacle musical a Lille">
+  <meta property="og:description" content="Decouvrez ALFRED, un spectacle musical original a Lille mele de theatre, chant, danse et mystere.">
+  <meta property="og:image" content="https://alfred-spectacle.fr/assets/hero_poster.png">
+  <meta property="og:url" content="https://alfred-spectacle.fr/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ALFRED - Spectacle musical a Lille">
+  <meta name="twitter:description" content="Spectacle musical original a Lille : theatre, chant, danse et mystere.">
+  <meta name="twitter:image" content="https://alfred-spectacle.fr/assets/hero_poster.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <link id="theme-style" rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TheaterEvent",
+      "name": "ALFRED",
+      "description": "ALFRED est un spectacle musical original a Lille, mele de theatre, chant, danse, mystere et emotion.",
+      "image": "https://alfred-spectacle.fr/assets/hero_poster.png",
+      "url": "https://alfred-spectacle.fr/",
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "eventStatus": "https://schema.org/EventScheduled",
+      "location": {
+        "@type": "Place",
+        "name": "Lille",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Lille",
+          "addressCountry": "FR"
+        }
+      },
+      "performer": {
+        "@type": "PerformingGroup",
+        "name": "Troupe ALFRED"
+      },
+      "organizer": {
+        "@type": "Organization",
+        "name": "ALFRED",
+        "url": "https://alfred-spectacle.fr/"
+      }
+    }
+  </script>
 </head>
 <script>
   (function () {
@@ -50,14 +97,14 @@
         <div class="container hero-content">
         <h1 class="section-title2 gold">Alfred</h1>
 
-          <p class="hero-tagline">Plongez dans le mystère…</p>
+          <p class="hero-tagline">Spectacle musical a Lille</p>
 
           <div class="hero-actions">
             <a class="btn primary" href="#dates">Voir les dates</a>
             <a class="btn ghost" href="#artistes">Découvrir les artistes</a>
           </div>
 
-          <p class="hero-note">Spectacle musical — Jouable en théâtre • Tout public</p>
+          <p class="hero-note">ALFRED - Spectacle musical a Lille - Theatre, chant et danse - Tout public</p>
         </div>
       </div>
     </section>
@@ -67,6 +114,7 @@
       <div class="container">
         <h2 class="section-title">Découvrez le monde d’Alfred</h2>
         <p class="section-subtitle">
+ALFRED est un spectacle musical original a Lille, cree par une troupe d'artistes passionnes. <br>
 Et si une simple exploration nocturne faisait ressurgir une histoire oubliée ? <br>
 Dans une forêt, deux frère et sœur découvrent un laboratoire abandonné et une mystérieuse machine musicale.
 À travers des cassettes laissées par Alfred, inventeur de génie aussi brillant que solitaire, passé et présent s’entremêlent.
@@ -108,7 +156,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
         <h2 class="section-title gold">Les artistes</h2>
         <p class="section-subtitle">Découvrez les talents derrière le mystère…</p>
 
-        <div class="artists-grid">
+        <div class="artists-grid" id="artists-list">
 		<figure class="artist">
             <img src="assets/marie_proxy.png" alt="Noah" />
             <figcaption>Marie</figcaption>
@@ -172,6 +220,32 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
           </figure>
         </div>
 
+        <div class="member-popup" id="member-popup" aria-hidden="true" hidden>
+          <div class="member-popup-backdrop" data-close-member-popup></div>
+          <article class="member-popup-panel" role="dialog" aria-modal="true" aria-labelledby="member-popup-title">
+            <button class="member-popup-close" type="button" data-close-member-popup aria-label="Fermer"></button>
+            <div class="member-popup-layout">
+              <img class="member-popup-image" id="member-popup-image" src="assets/logo2.png" alt="">
+              <div class="member-popup-content">
+                <h3 id="member-popup-title">Membre</h3>
+                <table class="member-popup-table">
+                  <tbody id="member-popup-table"></tbody>
+                </table>
+                <p class="member-popup-description" id="member-popup-description"></p>
+              </div>
+            </div>
+            <div class="member-popup-gallery" id="member-popup-gallery"></div>
+          </article>
+        </div>
+
+        <div class="gallery-lightbox" id="gallery-lightbox" aria-hidden="true" hidden>
+          <div class="gallery-lightbox-backdrop" data-close-gallery-lightbox></div>
+          <article class="gallery-lightbox-panel" role="dialog" aria-modal="true" aria-label="Media en grand">
+            <button class="gallery-lightbox-close" type="button" data-close-gallery-lightbox aria-label="Fermer"></button>
+            <div class="gallery-lightbox-content" id="gallery-lightbox-content"></div>
+          </article>
+        </div>
+
  <h4 class="section-title gold">Le staff</h4>
 
         <div class="artists-grid2">
@@ -196,10 +270,7 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
             <img src="assets/ezio_proxy.png" alt="Ambre" />
             <figcaption>Ezio <br> <span>chorégraphe principale</span></figcaption>
           </figure>
-    <figure class="artist">
-            <img src="assets/niwa_proxy.png" alt="Luse" />
-            <figcaption>Niwa <br> <span>chorégraphe secondaire</span></figcaption>
-          </figure>
+
       <figure class="artist">
             <img src="assets/ambre_proxy.png" alt="Ambre" />
             <figcaption>Ambre <br> <span>maquilleuse </span></figcaption>
@@ -299,12 +370,214 @@ Un spectacle musical intense et lumineux, où l’on comprend que les plus belle
     document.getElementById('year').textContent = new Date().getFullYear();
 
     const showDates = document.getElementById('show-dates');
+    const artistsList = document.getElementById('artists-list');
+    const memberPopup = document.getElementById('member-popup');
+    const memberPopupImage = document.getElementById('member-popup-image');
+    const memberPopupTitle = document.getElementById('member-popup-title');
+    const memberPopupTable = document.getElementById('member-popup-table');
+    const memberPopupDescription = document.getElementById('member-popup-description');
+    const memberPopupGallery = document.getElementById('member-popup-gallery');
+    const galleryLightbox = document.getElementById('gallery-lightbox');
+    const galleryLightboxContent = document.getElementById('gallery-lightbox-content');
+    let publicMembers = [];
+    let activeGalleryItems = [];
 
     function escapeHtml(value = '') {
       const element = document.createElement('span');
       element.textContent = value;
       return element.innerHTML;
     }
+
+    function getArtistRoleLabel(role) {
+      return {
+        chanteur: 'Chanteur',
+        comedien: 'Comedien',
+        danseur: 'Danseur'
+      }[role] || role;
+    }
+
+    function getYouTubeEmbedUrl(url = '') {
+      const match = String(url).match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]+)/i);
+      return match ? `https://www.youtube.com/embed/${match[1]}` : '';
+    }
+
+    function renderArtists(members = []) {
+      if (!members.length) return;
+
+      const orderedMembers = [...members].sort((left, right) => {
+        const leftOrder = Number.isFinite(Number(left.displayOrder)) ? Number(left.displayOrder) : 999;
+        const rightOrder = Number.isFinite(Number(right.displayOrder)) ? Number(right.displayOrder) : 999;
+        return leftOrder - rightOrder || String(left.displayName).localeCompare(String(right.displayName), 'fr');
+      });
+
+      artistsList.innerHTML = orderedMembers.map((member) => `
+        <figure class="artist" data-member="${escapeHtml(member.username)}" tabindex="0" role="button" aria-label="Voir le profil de ${escapeHtml(member.displayName)}">
+          <img src="${escapeHtml(member.imagePath || 'assets/logo2.png')}" alt="${escapeHtml(member.displayName)}" />
+          <figcaption>
+            ${escapeHtml(member.displayName)}
+            ${member.displayRole ? `<br><span>${escapeHtml(member.displayRole)}</span>` : ''}
+          </figcaption>
+        </figure>
+      `).join('');
+    }
+
+    function renderMemberInfoRow(label, value) {
+      if (!value) return '';
+      return `
+        <tr>
+          <th>${escapeHtml(label)}</th>
+          <td>${escapeHtml(value)}</td>
+        </tr>
+      `;
+    }
+
+    function renderGalleryItem(item) {
+      if (!item?.url) return '';
+      const itemIndex = activeGalleryItems.indexOf(item);
+
+      if (item.type === 'youtube') {
+        const embedUrl = getYouTubeEmbedUrl(item.url);
+        if (!embedUrl) return '';
+        return `
+          <button class="member-gallery-button member-gallery-video" type="button" data-gallery-index="${itemIndex}" aria-label="Ouvrir la video en grand">
+            <iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(item.title || 'Video YouTube')}" loading="lazy"></iframe>
+          </button>
+        `;
+      }
+
+      if (item.type === 'video') {
+        return `
+          <button class="member-gallery-button" type="button" data-gallery-index="${itemIndex}" aria-label="Ouvrir la video en grand">
+            <video class="member-gallery-item" muted src="${escapeHtml(item.url)}"></video>
+          </button>
+        `;
+      }
+
+      return `
+        <button class="member-gallery-button" type="button" data-gallery-index="${itemIndex}" aria-label="Ouvrir l image en grand">
+          <img class="member-gallery-item" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.title || 'Photo du membre')}" loading="lazy">
+        </button>
+      `;
+    }
+
+    function renderLightboxMedia(item) {
+      if (!item?.url) return '';
+
+      if (item.type === 'youtube') {
+        const embedUrl = getYouTubeEmbedUrl(item.url);
+        return embedUrl
+          ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(item.title || 'Video YouTube')}" allowfullscreen></iframe>`
+          : '';
+      }
+
+      if (item.type === 'video') {
+        return `<video controls autoplay src="${escapeHtml(item.url)}"></video>`;
+      }
+
+      return `<img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.title || 'Photo du membre')}">`;
+    }
+
+    function openGalleryLightbox(item) {
+      const content = renderLightboxMedia(item);
+      if (!content) return;
+
+      galleryLightboxContent.innerHTML = content;
+      galleryLightbox.hidden = false;
+      galleryLightbox.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('member-popup-open');
+    }
+
+    function closeGalleryLightbox() {
+      galleryLightbox.setAttribute('aria-hidden', 'true');
+      galleryLightbox.hidden = true;
+      galleryLightboxContent.innerHTML = '';
+      if (memberPopup.getAttribute('aria-hidden') === 'true') {
+        document.body.classList.remove('member-popup-open');
+      }
+    }
+
+    function openMemberPopup(member) {
+      const roleText = member.displayRole || (member.artistRoles || []).map(getArtistRoleLabel).join(', ');
+      memberPopupImage.src = member.imagePath || 'assets/logo2.png';
+      memberPopupImage.alt = member.displayName || 'Membre Alfred';
+      memberPopupTitle.textContent = member.displayName || 'Membre';
+      memberPopupTable.innerHTML = [
+        renderMemberInfoRow('Prenom', member.displayName),
+        renderMemberInfoRow('Age', member.age ? `${member.age} ans` : ''),
+        renderMemberInfoRow('Role', roleText)
+      ].join('');
+      memberPopupDescription.textContent = member.description || 'Description a venir.';
+      activeGalleryItems = member.gallery || [];
+      memberPopupGallery.innerHTML = activeGalleryItems.length
+        ? activeGalleryItems.map(renderGalleryItem).join('')
+        : '<p class="member-popup-empty">Galerie a venir.</p>';
+
+      memberPopup.hidden = false;
+      memberPopup.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('member-popup-open');
+    }
+
+    function closeMemberPopup() {
+      memberPopup.setAttribute('aria-hidden', 'true');
+      memberPopup.hidden = true;
+      document.body.classList.remove('member-popup-open');
+      closeGalleryLightbox();
+      memberPopupGallery.innerHTML = '';
+      activeGalleryItems = [];
+    }
+
+    artistsList.addEventListener('click', (event) => {
+      const card = event.target.closest('[data-member]');
+      if (!card) return;
+
+      const member = publicMembers.find((item) => item.username === card.dataset.member);
+      if (member) openMemberPopup(member);
+    });
+
+    artistsList.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const card = event.target.closest('[data-member]');
+      if (!card) return;
+
+      event.preventDefault();
+      const member = publicMembers.find((item) => item.username === card.dataset.member);
+      if (member) openMemberPopup(member);
+    });
+
+    memberPopup.addEventListener('click', (event) => {
+      if (event.target.closest('[data-close-member-popup]')) closeMemberPopup();
+    });
+
+    memberPopupGallery.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-gallery-index]');
+      if (!button) return;
+
+      const item = activeGalleryItems[Number(button.dataset.galleryIndex)];
+      openGalleryLightbox(item);
+    });
+
+    galleryLightbox.addEventListener('click', (event) => {
+      if (event.target.closest('[data-close-gallery-lightbox]')) closeGalleryLightbox();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+
+      if (galleryLightbox.getAttribute('aria-hidden') === 'false') {
+        closeGalleryLightbox();
+        return;
+      }
+
+      closeMemberPopup();
+    });
+
+    fetch('/.netlify/functions/public-members')
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Membres indisponibles')))
+      .then((data) => {
+        publicMembers = data.members || [];
+        renderArtists(publicMembers);
+      })
+      .catch(() => {});
 
     function formatShowDate(date) {
       const value = new Date(`${date}T12:00:00`);

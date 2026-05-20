@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profil membre - ALFRED</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#050806">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/pwa-icon-192.png">
+  <link rel="shortcut icon" href="assets/pwa-icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="standalone-member">
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Alfred, accueil">
+        <img src="assets/logo2.png" alt="ALFRED" />
+      </a>
+      <nav class="nav">
+        <a href="planning.html">Planning</a>
+        <a href="login.html">Espace membre</a>
+      </nav>
+      <button class="cta-top nav-button" id="logout-button" type="button" hidden>Se deconnecter</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="section member-page">
+      <div class="container planning-card profile-card">
+        <h1 class="section-title">Mon profil</h1>
+        <p class="planning-status" id="profile-status" role="status" aria-live="polite">Chargement du profil...</p>
+
+        <form class="planning-admin-form profile-form" id="profile-form" hidden>
+          <div class="profile-preview">
+            <img id="profile-preview-image" src="assets/logo2.png" alt="Apercu du profil">
+            <div>
+              <h2 id="profile-preview-name">Profil</h2>
+              <p id="profile-preview-role">Visible sur la page d'accueil</p>
+            </div>
+          </div>
+
+          <div class="planning-admin-grid">
+            <label>
+              Prenom
+              <input id="profile-display-name" name="displayName" type="text" maxlength="80" required>
+            </label>
+            <label>
+              Age
+              <input id="profile-age" name="age" type="number" min="1" max="129" placeholder="Ex : 24">
+            </label>
+            <label>
+              Role affiche
+              <input id="profile-display-role" name="displayRole" type="text" maxlength="80" placeholder="Ex : Chanteur, danseur...">
+            </label>
+            <label>
+              Ordre d'affichage
+              <input id="profile-display-order" name="displayOrder" type="number" min="1" max="999" placeholder="Ex : 1">
+            </label>
+            <label>
+              Image principale
+              <input id="profile-image-path" name="imagePath" type="text" placeholder="assets/membres/niwa_proxy.png">
+            </label>
+            <label class="wide-field">
+              Petite description
+              <textarea id="profile-description" name="description" maxlength="700" rows="5" placeholder="Quelques lignes sur toi, ton role ou ton univers dans ALFRED."></textarea>
+            </label>
+            <label class="wide-field">
+              Galerie photo / video / YouTube
+              <textarea id="profile-gallery" name="gallery" rows="6" placeholder="Un lien par ligne : assets/..., https://youtu.be/... ou https://.../photo.jpg"></textarea>
+            </label>
+          </div>
+
+          <fieldset class="member-roles-fieldset">
+            <legend>Roles artistiques</legend>
+            <label>
+              <input class="profile-role-checkbox" type="checkbox" value="chanteur">
+              Chanteur
+            </label>
+            <label>
+              <input class="profile-role-checkbox" type="checkbox" value="comedien">
+              Comedien
+            </label>
+            <label>
+              <input class="profile-role-checkbox" type="checkbox" value="danseur">
+              Danseur
+            </label>
+          </fieldset>
+
+          <p class="planning-admin-feedback" id="profile-feedback" role="status" aria-live="polite"></p>
+          <button class="btn primary" type="submit">Enregistrer mon profil</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const status = document.getElementById('profile-status');
+    const form = document.getElementById('profile-form');
+    const feedback = document.getElementById('profile-feedback');
+    const logoutButton = document.getElementById('logout-button');
+    const displayNameInput = document.getElementById('profile-display-name');
+    const ageInput = document.getElementById('profile-age');
+    const displayRoleInput = document.getElementById('profile-display-role');
+    const displayOrderInput = document.getElementById('profile-display-order');
+    const imagePathInput = document.getElementById('profile-image-path');
+    const descriptionInput = document.getElementById('profile-description');
+    const galleryInput = document.getElementById('profile-gallery');
+    const previewImage = document.getElementById('profile-preview-image');
+    const previewName = document.getElementById('profile-preview-name');
+    const previewRole = document.getElementById('profile-preview-role');
+    const roleCheckboxes = [...document.querySelectorAll('.profile-role-checkbox')];
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Une erreur est survenue.');
+      return data;
+    }
+
+    function renderPreview() {
+      previewImage.src = imagePathInput.value.trim() || 'assets/logo2.png';
+      previewName.textContent = displayNameInput.value.trim() || 'Profil';
+      previewRole.textContent = displayRoleInput.value.trim() || 'Visible sur la page d accueil';
+    }
+
+    function galleryToText(gallery = []) {
+      return gallery.map((item) => item.url).filter(Boolean).join('\n');
+    }
+
+    function galleryFromText(value = '') {
+      return value
+        .split('\n')
+        .map((url) => url.trim())
+        .filter(Boolean)
+        .map((url) => ({ url }));
+    }
+
+    function fillForm(member) {
+      displayNameInput.value = member.displayName || member.username || '';
+      ageInput.value = member.age || '';
+      displayRoleInput.value = member.displayRole || '';
+      displayOrderInput.value = member.displayOrder || '';
+      imagePathInput.value = member.imagePath || '';
+      descriptionInput.value = member.description || '';
+      galleryInput.value = galleryToText(member.gallery || []);
+      roleCheckboxes.forEach((checkbox) => {
+        checkbox.checked = (member.artistRoles || []).includes(checkbox.value);
+      });
+      renderPreview();
+    }
+
+    [displayNameInput, displayRoleInput, imagePathInput].forEach((input) => {
+      input.addEventListener('input', renderPreview);
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      feedback.textContent = 'Enregistrement du profil...';
+
+      try {
+        const data = await requestJson('/.netlify/functions/update-member-profile', {
+          method: 'POST',
+          body: JSON.stringify({
+            displayName: displayNameInput.value,
+            age: ageInput.value,
+            displayRole: displayRoleInput.value,
+            displayOrder: displayOrderInput.value,
+            imagePath: imagePathInput.value,
+            description: descriptionInput.value,
+            gallery: galleryFromText(galleryInput.value),
+            artistRoles: roleCheckboxes
+              .filter((checkbox) => checkbox.checked)
+              .map((checkbox) => checkbox.value)
+          })
+        });
+        fillForm(data.member);
+        feedback.textContent = 'Profil enregistre.';
+      } catch (error) {
+        feedback.textContent = error.message;
+      }
+    });
+
+    logoutButton.addEventListener('click', async () => {
+      await requestJson('/.netlify/functions/logout', { method: 'POST' }).catch(() => {});
+      window.location.href = 'login.html';
+    });
+
+    requestJson('/.netlify/functions/session')
+      .then((data) => {
+        if (!data.member) throw new Error('Connexion requise.');
+        status.textContent = 'Ces informations apparaissent dans la popup de la page d accueil.';
+        logoutButton.hidden = false;
+        form.hidden = false;
+        fillForm(data.member);
+      })
+      .catch((error) => {
+        status.textContent = error.message;
+        if (error.message === 'Connexion requise.') {
+          window.location.href = 'login.html';
+        }
+      });
+  </script>
+</body>
+</html>

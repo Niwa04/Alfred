@@ -4,7 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Membres — ALFRED</title>
+  <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#050806">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/pwa-icon-192.png">
+  <link rel="shortcut icon" href="assets/pwa-icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,6 +52,10 @@
         <label>
           Chemin personnalise
           <input class="member-image-input" type="text" placeholder="assets/niwa_proxy.png">
+        </label>
+        <label>
+          Ordre d'affichage
+          <input class="member-order-input" type="number" min="1" max="999" placeholder="1">
         </label>
         <fieldset class="member-roles-fieldset">
           <legend>Roles artistiques</legend>
@@ -113,12 +120,14 @@
         const role = node.querySelector('p');
         const select = node.querySelector('.member-image-select');
         const input = node.querySelector('.member-image-input');
+        const orderInput = node.querySelector('.member-order-input');
         const roleCheckboxes = [...node.querySelectorAll('.member-role-checkbox')];
         const button = node.querySelector('.member-save');
 
         title.textContent = member.displayName;
         role.textContent = member.role === 'admin' ? 'Administrateur' : 'Membre';
         input.value = member.imagePath || '';
+        orderInput.value = member.displayOrder || '';
         setImagePreview(img, member.imagePath);
         roleCheckboxes.forEach((checkbox) => {
           checkbox.checked = (member.artistRoles || []).includes(checkbox.value);
@@ -150,6 +159,7 @@
               body: JSON.stringify({
                 username: member.username,
                 imagePath: input.value,
+                displayOrder: orderInput.value,
                 artistRoles: roleCheckboxes
                   .filter((checkbox) => checkbox.checked)
                   .map((checkbox) => checkbox.value)
